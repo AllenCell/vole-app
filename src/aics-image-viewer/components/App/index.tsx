@@ -601,6 +601,8 @@ const App: React.FC<AppProps> = (props) => {
               multiscaleDims={image?.imageInfo.imageInfo.multiscaleLevelDims}
               multiscaleIndex={image?.imageInfo.multiscaleLevel}
               openInNewTab={openInNewTab}
+              view3d={view3d}
+              volume={volume.image}
             />
             <CellViewerCanvasWrapper
               view3d={view3d}

@@ -372,7 +372,7 @@ const App: React.FC<AppProps> = (props) => {
     onScrub,
     maskChannelName,
   });
-  const { image, setTime, setScene } = volume;
+  const { image, setTime, setScene, playControls } = volume;
 
   const hasRawImage = !!(props.rawData && props.rawDims);
   const numScenes = hasRawImage ? 1 : ((props.imageUrl as MultisceneUrls).scenes?.length ?? 1);
@@ -603,6 +603,7 @@ const App: React.FC<AppProps> = (props) => {
               openInNewTab={openInNewTab}
               view3d={view3d}
               volume={volume.image}
+              playControls={playControls}
             />
             <CellViewerCanvasWrapper
               view3d={view3d}

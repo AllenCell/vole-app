@@ -244,7 +244,7 @@ export default class CanvasRecorder {
   /**
    * Whether this recorder is supported by the current client browser.
    */
-  public isSupported(): boolean {
+  public static isSupported(): boolean {
     return true;
   }
 

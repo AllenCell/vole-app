@@ -17,6 +17,7 @@ import Mp4VideoRecorder from "../../../shared/utils/recorders/Mp4VideoRecorder";
 import { SettingsContainer, SettingsItem } from "../../shared/SettingsContainer";
 import StyledInlineProgress from "../../shared/StyledInlineProgress";
 import CanvasOverlayRenderer from "./CanvasOverlayRenderer";
+import RecordingCropPreview from "./RecordingCropPreview";
 import RecordingDimensionControls from "./RecordingDimensionControls";
 import RecordingRangeControl from "./RecordingRangeControl";
 
@@ -374,6 +375,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
         onCancel={handleCancel}
         footer={modalFooter}
         getContainer={() => modalContainerRef.current ?? document.body}
+        style={{ width: "fit-content" }}
+        width={1200}
       >
         <div className={styles.exportModalContent} ref={exportModalRef}>
           <div className={styles.exportModalSettingsContainer}>
@@ -491,6 +494,12 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
               </SettingsItem>
             </SettingsContainer>
             <br />
+          </div>
+          <div className={styles.cropWindowContainer}>
+            <RecordingCropPreview
+              getHtmlCanvas={() => props.view3d.getCanvasDOMElement()}
+              cropDimensions={exportDimensions}
+            />
           </div>
         </div>
       </Modal>

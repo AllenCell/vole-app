@@ -158,6 +158,10 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   //// MARK: Callbacks
   //////////////////////////////////////////////////////////
 
+  const getHtmlCanvas = useCallback((): HTMLCanvasElement => {
+    return view3d.getCanvasDOMElement();
+  }, [view3d]);
+
   const stopRecording = useCallback(
     async (closeModal: boolean): Promise<void> => {
       recorderRef.current?.abort();
@@ -496,10 +500,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
             <br />
           </div>
           <div className={styles.cropWindowContainer}>
-            <RecordingCropPreview
-              getHtmlCanvas={() => props.view3d.getCanvasDOMElement()}
-              cropDimensions={exportDimensions}
-            />
+            <RecordingCropPreview view3d={view3d} cropDimensionsPx={exportDimensions} />
           </div>
         </div>
       </Modal>

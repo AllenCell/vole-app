@@ -1,18 +1,11 @@
-import React, { ReactElement, useEffect, useRef, useState } from "react";
-import ReactCrop, { Crop } from "react-image-crop";
+import { View3d } from "@aics/vole-core";
+import React, { type ReactElement, useEffect, useRef, useState } from "react";
+import ReactCrop, { type Crop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 
 type RecordingCropPreviewProps = {
-  getHtmlCanvas: () => HTMLCanvasElement;
-  cropDimensions: [number, number];
-};
-
-const defaultCrop: Crop = {
-  unit: "%",
-  x: 25,
-  y: 25,
-  width: 50,
-  height: 50,
+  view3d: View3d;
+  cropDimensionsPx: [number, number];
 };
 
 const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewportDimensions: [number, number]): Crop => {
@@ -31,42 +24,24 @@ const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewport
 };
 
 export default function RecordingCropPreview(props: RecordingCropPreviewProps): ReactElement {
-  const { getHtmlCanvas, cropDimensions: dimensions } = props;
+  const { view3d, cropDimensionsPx: dimensions } = props;
   const [image, setImage] = useState<string>(
     "https://marketplace.canva.com/xHPJk/MAHA8XxHPJk/1/tl/canva-MAHA8XxHPJk.jpg"
   );
   const [viewportDimensions, setViewportDimensions] = useState<[number, number]>([
-    getHtmlCanvas().width,
-    getHtmlCanvas().height,
+    view3d.getCanvasDOMElement().width,
+    view3d.getCanvasDOMElement().height,
   ]);
 
-  const prevDimensionsRef = useRef(props.cropDimensions);
+  const prevDimensionsRef = useRef(props.cropDimensionsPx);
   const [percentCrop, setPercentCrop] = useState<Crop>(getDefaultCropFromDimensions(dimensions, viewportDimensions));
-
-  // useEffect(() => {
-  //   let objectUrl: string | undefined;
-  //   const generateImage = async (): Promise<void> => {
-  //     const canvas = getHtmlCanvas();
-  //     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve));
-  //     if (!blob) {
-  //       return;
-  //     }
-  //     objectUrl = URL.createObjectURL(blob);
-  //     setImage(objectUrl);
-  //   };
-  //   generateImage();
-  //   return () => {
-  //     if (objectUrl) {
-  //       URL.revokeObjectURL(objectUrl);
-  //     }
-  //   };
-  // }, [getHtmlCanvas]);
 
   // Update crop on dimensions change
   useEffect(() => {
     const prevDimensions = prevDimensionsRef.current;
     const widthChanged = prevDimensions[0] !== dimensions[0];
     const heightChanged = prevDimensions[1] !== dimensions[1];
+    // TODO: Account for image (viewport) dimensions here
 
     if (!widthChanged && !heightChanged) {
       return;
@@ -105,7 +80,26 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
     });
 
     prevDimensionsRef.current = dimensions;
-  }, [dimensions]);
+  }, [dimensions, percentCrop]);
+
+  // Keep viewport dimensions in sync with viewport when the user is using the
+  // current viewport size.
+  useEffect(() => {
+    const canvasHtmlElement = view3d.getCanvasDOMElement();
+    if (!canvasHtmlElement) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      const width = canvasHtmlElement.width;
+      const height = canvasHtmlElement.height;
+      setViewportDimensions([width, height]);
+      view3d.capture((dataUrl: string) => setImage(dataUrl));
+    });
+    observer.observe(canvasHtmlElement);
+    return () => observer.disconnect();
+  }, [view3d]);
+
+  //// MARK: Callbacks
 
   const handleOnChange = (crop: Crop, percentCrop: Crop): void => {
     // If user clicks outside of crop area, do not update the crop
@@ -116,13 +110,14 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
   };
 
   return (
-    <div style={{ background: "black" }}>
+    <div>
       <ReactCrop
         crop={percentCrop}
         onChange={handleOnChange}
-        aspect={props.cropDimensions[0] / props.cropDimensions[1]}
+        aspect={props.cropDimensionsPx[0] / props.cropDimensionsPx[1]}
+        key={dimensions[0] / dimensions[1]}
       >
-        <img src={image} alt="Crop preview" width={500} height={500} />
+        <img src={image} alt="Crop preview" style={{ maxWidth: "100%", maxHeight: "100%" }} />
       </ReactCrop>
     </div>
   );

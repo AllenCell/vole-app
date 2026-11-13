@@ -103,7 +103,7 @@
 }
 
 .cropWindowContainer {
-  width: 600px;
+  width: 500px;
   height: 500px;
   background-color: var(--color-controlpanel-bg);
   align-content: center;

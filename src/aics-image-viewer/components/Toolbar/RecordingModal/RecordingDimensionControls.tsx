@@ -50,6 +50,8 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
   const [widthInput, setWidthInput] = useState(dimensions[0]);
   const [heightInput, setHeightInput] = useState(dimensions[1]);
 
+  //// MARK: Listeners
+
   // Sync width and height inputs with the current dimensions
   const setDimensions = useCallback(
     (dimensions: [number, number]) => {

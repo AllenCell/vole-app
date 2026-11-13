@@ -10,6 +10,7 @@ type RecordingCropPreviewProps = {
   cropDimensionsPx: [number, number];
   width: number;
   height: number;
+  image: string | undefined;
 };
 
 const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewportDimensions: [number, number]): Crop => {
@@ -87,9 +88,6 @@ function updateCrop(
 
 export default function RecordingCropPreview(props: RecordingCropPreviewProps): ReactElement {
   const { view3d, cropDimensionsPx: cropDimensionsPx } = props;
-  const [image, setImage] = useState<string>(
-    "https://marketplace.canva.com/xHPJk/MAHA8XxHPJk/1/tl/canva-MAHA8XxHPJk.jpg"
-  );
   const [viewportDimensions, setViewportDimensions] = useState<[number, number]>([
     view3d.getCanvasDOMElement().width,
     view3d.getCanvasDOMElement().height,
@@ -132,7 +130,6 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
       const width = canvasHtmlElement.width;
       const height = canvasHtmlElement.height;
       setViewportDimensions([width, height]);
-      view3d.capture((dataUrl: string) => setImage(dataUrl));
     });
     observer.observe(canvasHtmlElement);
     return () => observer.disconnect();
@@ -155,7 +152,7 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
         keepSelection={true}
       >
         <img
-          src={image}
+          src={props.image}
           alt="Crop preview"
           style={{ objectFit: "contain", maxWidth: props.width, maxHeight: props.height }}
         />

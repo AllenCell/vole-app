@@ -74,6 +74,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     [_setIsModalOpen, view3d, volume]
   );
 
+  const [image, setImage] = useState<string>();
+
   // On open, save the current frame so it can be restored on modal close.
   useEffect(() => {
     if (isModalOpen) {
@@ -82,8 +84,9 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
       originalFrameRef.current = useViewerState.getState().time;
       // Disable auto-rotation
       changeViewerSetting("autorotate", false);
+      view3d.capture((dataUrl: string) => setImage(dataUrl));
     }
-  }, [isModalOpen, changeViewerSetting, playControls]);
+  }, [isModalOpen, changeViewerSetting, playControls, view3d]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
@@ -496,7 +499,13 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
             <br />
           </div>
           <div className={styles.cropWindowContainer}>
-            <RecordingCropPreview view3d={view3d} cropDimensionsPx={exportDimensions} width={500} height={500} />
+            <RecordingCropPreview
+              view3d={view3d}
+              cropDimensionsPx={exportDimensions}
+              width={500}
+              height={500}
+              image={image}
+            />
           </div>
         </div>
       </Modal>

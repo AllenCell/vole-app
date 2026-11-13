@@ -1,4 +1,4 @@
-import { View3d } from "@aics/vole-core";
+import type { View3d } from "@aics/vole-core";
 import React, { type ReactElement, useEffect, useRef, useState } from "react";
 import ReactCrop, { type Crop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
@@ -23,8 +23,30 @@ const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewport
   };
 };
 
+function percentToPixelCrop(percentCrop: Crop, viewportDimensions: [number, number]): Crop {
+  const [viewportWidth, viewportHeight] = viewportDimensions;
+  return {
+    unit: "px",
+    x: (percentCrop.x / 100) * viewportWidth,
+    y: (percentCrop.y / 100) * viewportHeight,
+    width: (percentCrop.width / 100) * viewportWidth,
+    height: (percentCrop.height / 100) * viewportHeight,
+  };
+}
+
+function pixelToPercentCrop(pixelCrop: Crop, viewportDimensions: [number, number]): Crop {
+  const [viewportWidth, viewportHeight] = viewportDimensions;
+  return {
+    unit: "%",
+    x: (pixelCrop.x / viewportWidth) * 100,
+    y: (pixelCrop.y / viewportHeight) * 100,
+    width: (pixelCrop.width / viewportWidth) * 100,
+    height: (pixelCrop.height / viewportHeight) * 100,
+  };
+}
+
 export default function RecordingCropPreview(props: RecordingCropPreviewProps): ReactElement {
-  const { view3d, cropDimensionsPx: dimensions } = props;
+  const { view3d, cropDimensionsPx: cropDimensionsPx } = props;
   const [image, setImage] = useState<string>(
     "https://marketplace.canva.com/xHPJk/MAHA8XxHPJk/1/tl/canva-MAHA8XxHPJk.jpg"
   );
@@ -33,54 +55,63 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
     view3d.getCanvasDOMElement().height,
   ]);
 
-  const prevDimensionsRef = useRef(props.cropDimensionsPx);
-  const [percentCrop, setPercentCrop] = useState<Crop>(getDefaultCropFromDimensions(dimensions, viewportDimensions));
+  const prevCropDimensionsRef = useRef(props.cropDimensionsPx);
+  const [percentCrop, setPercentCrop] = useState<Crop>(
+    getDefaultCropFromDimensions(cropDimensionsPx, viewportDimensions)
+  );
 
-  // Update crop on dimensions change
+  const viewportAspectRatioRef = useRef(viewportDimensions[0] / viewportDimensions[1]);
+  viewportAspectRatioRef.current = viewportDimensions[0] / viewportDimensions[1];
+
+  // Update crop on crop dimensions change
   useEffect(() => {
-    const prevDimensions = prevDimensionsRef.current;
-    const widthChanged = prevDimensions[0] !== dimensions[0];
-    const heightChanged = prevDimensions[1] !== dimensions[1];
-    // TODO: Account for image (viewport) dimensions here
-
+    const prevCropDimsPx = prevCropDimensionsRef.current;
+    const widthChanged = prevCropDimsPx[0] !== cropDimensionsPx[0];
+    const heightChanged = prevCropDimsPx[1] !== cropDimensionsPx[1];
     if (!widthChanged && !heightChanged) {
       return;
     }
 
-    const centerX = percentCrop.x + percentCrop.width / 2;
-    const centerY = percentCrop.y + percentCrop.height / 2;
-    const newAspectRatio = dimensions[0] / dimensions[1];
-    let newWidthPct = percentCrop.width;
-    let newHeightPct = percentCrop.height;
-    if (widthChanged) {
-      // Keep height; adjust width based on aspect ratio
-      newWidthPct = percentCrop.height * newAspectRatio;
-    }
-    if (heightChanged) {
-      // Keep width; adjust height based on aspect ratio
-      newHeightPct = percentCrop.width / newAspectRatio;
+    // TODO: Account for image (viewport) dimensions here
+    const pxCrop = percentToPixelCrop(percentCrop, viewportDimensions);
+    const centerPxX = pxCrop.x + pxCrop.width / 2;
+    const centerPxY = pxCrop.y + pxCrop.height / 2;
+    const oldCropAspectRatioPx = pxCrop.width / pxCrop.height;
+    const newCropAspectRatioPx = cropDimensionsPx[0] / cropDimensionsPx[1];
+
+    let newWidthPx = pxCrop.width;
+    let newHeightPx = pxCrop.height;
+    if (oldCropAspectRatioPx > newCropAspectRatioPx) {
+      // Old crop was wider than the new crop; use width as bound, and adjust height
+      newHeightPx = newWidthPx / newCropAspectRatioPx;
+    } else {
+      newWidthPx = newHeightPx * newCropAspectRatioPx;
     }
 
-    // Normalize width/height to be within 0-100%
-    if (newWidthPct > 100) {
-      newWidthPct = 100;
-      newHeightPct = newWidthPct / newAspectRatio;
+    // Normalize width and height to be within the viewport bounds
+    if (newWidthPx > viewportDimensions[0]) {
+      newWidthPx = viewportDimensions[0];
+      newHeightPx = newWidthPx / newCropAspectRatioPx;
     }
-    if (newHeightPct > 100) {
-      newHeightPct = 100;
-      newWidthPct = newHeightPct * newAspectRatio;
+    if (newHeightPx > viewportDimensions[1]) {
+      newHeightPx = viewportDimensions[1];
+      newWidthPx = newHeightPx * newCropAspectRatioPx;
     }
-
-    setPercentCrop({
-      unit: "%",
-      x: centerX - newWidthPct / 2,
-      y: centerY - newHeightPct / 2,
-      width: newWidthPct,
-      height: newHeightPct,
-    });
-
-    prevDimensionsRef.current = dimensions;
-  }, [dimensions, percentCrop]);
+    // TODO: Recenter if the new crop goes out of the viewport bounds
+    const newPxCrop: Crop = {
+      unit: "px",
+      x: centerPxX - newWidthPx / 2,
+      y: centerPxY - newHeightPx / 2,
+      width: newWidthPx,
+      height: newHeightPx,
+    };
+    const newPctCrop = pixelToPercentCrop(newPxCrop, viewportDimensions);
+    console.log("New percent crop", newPctCrop, newPxCrop);
+    console.log("centerPx", centerPxX, centerPxY);
+    console.log("dimensions", viewportDimensions, "pxCrop", pxCrop);
+    setPercentCrop(newPctCrop);
+    prevCropDimensionsRef.current = cropDimensionsPx;
+  }, [cropDimensionsPx, percentCrop, viewportDimensions]);
 
   // Keep viewport dimensions in sync with viewport when the user is using the
   // current viewport size.
@@ -106,18 +137,20 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
     if (crop.height === 0 || crop.width === 0) {
       return;
     }
-    setPercentCrop(percentCrop);
+    setPercentCrop(crop);
+    // setPercentCrop(percentCrop);
   };
 
   return (
-    <div>
+    <div style={{ maxWidth: "500px", maxHeight: "500px" }}>
       <ReactCrop
         crop={percentCrop}
         onChange={handleOnChange}
         aspect={props.cropDimensionsPx[0] / props.cropDimensionsPx[1]}
-        key={dimensions[0] / dimensions[1]}
+        key={cropDimensionsPx[0] / cropDimensionsPx[1]}
+        style={{ objectFit: "contain" }}
       >
-        <img src={image} alt="Crop preview" style={{ maxWidth: "100%", maxHeight: "100%" }} />
+        <img src={image} alt="Crop preview" style={{ objectFit: "contain", maxWidth: "100%", maxHeight: "100%" }} />
       </ReactCrop>
     </div>
   );

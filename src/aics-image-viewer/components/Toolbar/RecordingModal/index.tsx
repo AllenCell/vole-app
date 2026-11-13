@@ -158,10 +158,6 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   //// MARK: Callbacks
   //////////////////////////////////////////////////////////
 
-  const getHtmlCanvas = useCallback((): HTMLCanvasElement => {
-    return view3d.getCanvasDOMElement();
-  }, [view3d]);
-
   const stopRecording = useCallback(
     async (closeModal: boolean): Promise<void> => {
       recorderRef.current?.abort();
@@ -380,7 +376,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
         footer={modalFooter}
         getContainer={() => modalContainerRef.current ?? document.body}
         style={{ width: "fit-content" }}
-        width={1200}
+        width={1000}
       >
         <div className={styles.exportModalContent} ref={exportModalRef}>
           <div className={styles.exportModalSettingsContainer}>
@@ -500,7 +496,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
             <br />
           </div>
           <div className={styles.cropWindowContainer}>
-            <RecordingCropPreview view3d={view3d} cropDimensionsPx={exportDimensions} />
+            <RecordingCropPreview view3d={view3d} cropDimensionsPx={exportDimensions} width={500} height={500} />
           </div>
         </div>
       </Modal>

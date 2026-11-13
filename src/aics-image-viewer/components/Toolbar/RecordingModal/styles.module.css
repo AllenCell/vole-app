@@ -103,8 +103,12 @@
 }
 
 .cropWindowContainer {
+  margin-top: 57px;
   width: 500px;
   height: 500px;
+  /* background-color: black; */
   background-color: var(--color-controlpanel-bg);
   align-content: center;
+  border: 1px solid var(--color-layout-dividers);
+  border-radius: 5px;
 }

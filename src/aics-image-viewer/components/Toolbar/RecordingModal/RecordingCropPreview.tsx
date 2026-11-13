@@ -27,28 +27,6 @@ const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewport
   };
 };
 
-function percentToPixelCrop(percentCrop: Crop, viewportDimensions: [number, number]): Crop {
-  const [viewportWidth, viewportHeight] = viewportDimensions;
-  return {
-    unit: "px",
-    x: (percentCrop.x / 100) * viewportWidth,
-    y: (percentCrop.y / 100) * viewportHeight,
-    width: (percentCrop.width / 100) * viewportWidth,
-    height: (percentCrop.height / 100) * viewportHeight,
-  };
-}
-
-function pixelToPercentCrop(pixelCrop: Crop, viewportDimensions: [number, number]): Crop {
-  const [viewportWidth, viewportHeight] = viewportDimensions;
-  return {
-    unit: "%",
-    x: (pixelCrop.x / viewportWidth) * 100,
-    y: (pixelCrop.y / viewportHeight) * 100,
-    width: (pixelCrop.width / viewportWidth) * 100,
-    height: (pixelCrop.height / viewportHeight) * 100,
-  };
-}
-
 function recenterPercentCrop(percentCrop: Crop): void {
   percentCrop.x = clamp(percentCrop.x, 0, 100 - percentCrop.width);
   percentCrop.y = clamp(percentCrop.y, 0, 100 - percentCrop.height);
@@ -68,43 +46,40 @@ function updateCrop(
     return percentCrop;
   }
 
-  // const centerPctX = percentCrop.x + percentCrop.width / 2;
-  // const centerPctY = percentCrop.y + percentCrop.height / 2;
+  const centerPctX = percentCrop.x + percentCrop.width / 2;
+  const centerPctY = percentCrop.y + percentCrop.height / 2;
+  let newHeightPct = percentCrop.height;
+  let newWidthPct = percentCrop.width;
 
-  const pxCrop = percentToPixelCrop(percentCrop, prevViewportDimensions);
-  const centerPxX = pxCrop.x + pxCrop.width / 2;
-  const centerPxY = pxCrop.y + pxCrop.height / 2;
-  const prevCropAspectRatioPx = pxCrop.width / pxCrop.height;
+  const prevCropAspectRatioPx = prevCropDimsPx[0] / prevCropDimsPx[1];
   const newCropAspectRatioPx = newCropDimsPx[0] / newCropDimsPx[1];
-
-  let newWidthPx = pxCrop.width;
-  let newHeightPx = pxCrop.height;
+  const newViewportAspectRatio = newViewportDimensions[0] / newViewportDimensions[1];
 
   if (prevCropAspectRatioPx > newCropAspectRatioPx) {
     // Old crop was wider than the new crop; use width as bound, and adjust height
-    newHeightPx = newWidthPx / newCropAspectRatioPx;
+    newHeightPct = (newWidthPct / newCropAspectRatioPx) * newViewportAspectRatio;
   } else {
-    newWidthPx = newHeightPx * newCropAspectRatioPx;
+    // Old crop was taller than the new crop; use height as bound, and adjust width
+    newWidthPct = (newHeightPct * newCropAspectRatioPx) / newViewportAspectRatio;
   }
 
   // Normalize width and height to be within the new viewport bounds
-  if (newWidthPx > newViewportDimensions[0]) {
-    newWidthPx = newViewportDimensions[0];
-    newHeightPx = newWidthPx / newCropAspectRatioPx;
+  if (newWidthPct > 100) {
+    newWidthPct = 100;
+    newHeightPct = (newWidthPct / newCropAspectRatioPx) * newViewportAspectRatio;
   }
-  if (newHeightPx > newViewportDimensions[1]) {
-    newHeightPx = newViewportDimensions[1];
-    newWidthPx = newHeightPx * newCropAspectRatioPx;
+  if (newHeightPct > 100) {
+    newHeightPct = 100;
+    newWidthPct = (newHeightPct * newCropAspectRatioPx) / newViewportAspectRatio;
   }
 
-  const newPxCrop: Crop = {
-    unit: "px",
-    x: centerPxX - newWidthPx / 2,
-    y: centerPxY - newHeightPx / 2,
-    width: newWidthPx,
-    height: newHeightPx,
+  const newPctCrop: Crop = {
+    unit: "%",
+    x: centerPctX - newWidthPct / 2,
+    y: centerPctY - newHeightPct / 2,
+    width: newWidthPct,
+    height: newHeightPct,
   };
-  const newPctCrop = pixelToPercentCrop(newPxCrop, newViewportDimensions);
   // Recenter if the new crop goes out of the viewport bounds
   recenterPercentCrop(newPctCrop);
   return newPctCrop;

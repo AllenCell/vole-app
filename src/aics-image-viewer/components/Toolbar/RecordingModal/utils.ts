@@ -76,13 +76,31 @@ export function getExportDimensions(dimensionsInput: [number, number], enforceEv
   return targetViewportDims;
 }
 
+export function getCanvasDimensions(
+  exportDimensions: [number, number],
+  percentCrop: Crop
+): {
+  canvasDimensions: [number, number];
+  canvasOffset: [number, number];
+} {
+  const canvasWidthPx = Math.ceil(exportDimensions[0] / (percentCrop.width / 100));
+  const canvasHeightPx = Math.ceil(exportDimensions[1] / (percentCrop.height / 100));
+  const offsetX = Math.round((percentCrop.x / 100) * canvasWidthPx);
+  const offsetY = Math.round((percentCrop.y / 100) * canvasHeightPx);
+
+  return {
+    canvasDimensions: [canvasWidthPx, canvasHeightPx],
+    canvasOffset: [offsetX, offsetY],
+  };
+}
+
 /**
  * Updates a crop when the viewport or crop dimensions (aspect ratio) changes.
  * @returns A percentile crop, adjusted to fit within the new viewport and crop
  * dimensions. If the viewport and crop dimensions have not changed, returns the
  * original percentile crop.
  */
-export function syncCropToDimensions(
+function syncCropToDimensions(
   percentCrop: Crop,
   newViewportDimensionsPx: [number, number],
   prevViewportDimensionsPx: [number, number],
@@ -152,6 +170,8 @@ const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewport
     height: height,
   };
 };
+
+//// MARK: Hooks
 
 export function useCrop(
   viewportDimensionsPx: [number, number],

@@ -1,23 +1,19 @@
-import type { View3d } from "@aics/vole-core";
 import React, { type ReactElement } from "react";
 import ReactCrop, { type Crop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 
-import { useCrop, useViewportDimensions } from "./utils";
-
 type RecordingCropPreviewProps = {
-  view3d: View3d;
   cropDimensionsPx: [number, number];
   width: number;
   height: number;
   image: string | undefined;
+  isRecording: boolean;
+  percentCrop: Crop;
+  setPercentCrop: (crop: Crop) => void;
 };
 
 export default function RecordingCropPreview(props: RecordingCropPreviewProps): ReactElement {
-  const { view3d, cropDimensionsPx: cropDimensionsPx } = props;
-
-  const viewportDimensions = useViewportDimensions(view3d);
-  const [percentCrop, setPercentCrop] = useCrop(viewportDimensions, cropDimensionsPx);
+  const { cropDimensionsPx: cropDimensionsPx, percentCrop, setPercentCrop } = props;
 
   //// MARK: Callbacks
 
@@ -34,6 +30,7 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
         key={cropDimensionsPx[0] / cropDimensionsPx[1]}
         style={{ objectFit: "contain" }}
         keepSelection={true}
+        disabled={props.isRecording}
       >
         <img
           src={props.image}

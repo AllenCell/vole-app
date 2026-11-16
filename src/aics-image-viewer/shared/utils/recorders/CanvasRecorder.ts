@@ -68,7 +68,6 @@ export const defaultRecordingOptions: RecordingOptions = {
  */
 export default class CanvasRecorder {
   private recording: boolean;
-  private finishedRecording: boolean;
   private timerId: number;
 
   protected setFrameAndRender: (frame: number) => Promise<void>;
@@ -90,7 +89,6 @@ export default class CanvasRecorder {
     }
 
     this.recording = false;
-    this.finishedRecording = false;
     this.timerId = 0;
 
     this.setFrameAndRender = setFrameAndRender;
@@ -107,7 +105,7 @@ export default class CanvasRecorder {
    * in the `recordingOptions` object or wherever `abort()` is called.
    */
   public async start(): Promise<void> {
-    if (this.recording || this.finishedRecording) {
+    if (this.recording) {
       return;
     }
     this.recording = true;
@@ -135,8 +133,6 @@ export default class CanvasRecorder {
     try {
       await this.onCompletedRecording();
       await this.options.onCompleted();
-      this.recording = false;
-      this.finishedRecording = true;
     } catch (e) {
       if (e instanceof Error) {
         this.options.onError(e);
@@ -146,6 +142,7 @@ export default class CanvasRecorder {
       console.error(e);
     } finally {
       await this.cleanup();
+      this.recording = false;
     }
   }
 
@@ -237,16 +234,11 @@ export default class CanvasRecorder {
    */
   public async abort(): Promise<void> {
     this.recording = false;
-    this.finishedRecording = true;
     await this.cleanup();
   }
 
   public isRecording(): boolean {
     return this.recording;
-  }
-
-  public isFinishedRecording(): boolean {
-    return this.finishedRecording;
   }
 
   /**

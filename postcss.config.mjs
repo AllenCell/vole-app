@@ -1,8 +1,9 @@
-// TODO when this codebase gains `"type": "module"`, switch this file extension back to .js
+// TODO when this project gains `"type": "module"`, switch this file extension back to .js
 
 import path from "path";
 
 import discardComments from "postcss-discard-comments";
+// TODO nesting has been W3C "baseline" since 2023. Remove this plugin?
 import nested from "postcss-nested";
 import importPlugin from "postcss-import";
 // TODO can these be replaced with native CSS vars?

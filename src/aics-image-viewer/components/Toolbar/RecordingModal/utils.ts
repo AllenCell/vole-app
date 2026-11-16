@@ -1,5 +1,8 @@
 import type { View3d } from "@aics/vole-core";
 import { useEffect, useRef, useState } from "react";
+import type { Crop } from "react-image-crop";
+
+import { clamp } from "../../../shared/utils/math";
 
 export function getFrameCount(min: number, max: number, frameIncrement: number): number {
   return Math.max(Math.ceil(((max ?? 1) - min + 1) / frameIncrement), 1);
@@ -71,6 +74,68 @@ export function getExportDimensions(dimensionsInput: [number, number], enforceEv
   }
 
   return targetViewportDims;
+}
+
+/**
+ * Updates a crop when the viewport or crop dimensions (aspect ratio) changes.
+ * @returns A percentile crop, adjusted to fit within the new viewport and crop
+ * dimensions. If the viewport and crop dimensions have not changed, returns the
+ * original percentile crop.
+ */
+export function syncCropToDimensions(
+  percentCrop: Crop,
+  newViewportDimensionsPx: [number, number],
+  prevViewportDimensionsPx: [number, number],
+  newCropDimsPx: [number, number],
+  prevCropDimsPx: [number, number]
+): Crop {
+  const cropDimsChanged = prevCropDimsPx[0] !== newCropDimsPx[0] || prevCropDimsPx[1] !== newCropDimsPx[1];
+  const viewportDimsChanged =
+    prevViewportDimensionsPx[0] !== newViewportDimensionsPx[0] ||
+    prevViewportDimensionsPx[1] !== newViewportDimensionsPx[1];
+
+  if (!cropDimsChanged && !viewportDimsChanged) {
+    return percentCrop;
+  }
+
+  const centerPctX = percentCrop.x + percentCrop.width / 2;
+  const centerPctY = percentCrop.y + percentCrop.height / 2;
+  let newHeightPct = percentCrop.height;
+  let newWidthPct = percentCrop.width;
+  const prevCropAspectRatioPx = prevCropDimsPx[0] / prevCropDimsPx[1];
+  const newCropAspectRatioPx = newCropDimsPx[0] / newCropDimsPx[1];
+  const newViewportAspectRatio = newViewportDimensionsPx[0] / newViewportDimensionsPx[1];
+
+  if (prevCropAspectRatioPx > newCropAspectRatioPx) {
+    // Old crop was wider than the new crop; use width as bound, and adjust height
+    newHeightPct = (newWidthPct / newCropAspectRatioPx) * newViewportAspectRatio;
+  } else {
+    // Old crop was taller than the new crop; use height as bound, and adjust width
+    newWidthPct = (newHeightPct * newCropAspectRatioPx) / newViewportAspectRatio;
+  }
+
+  // Normalize width and height to be within the new viewport bounds
+  if (newWidthPct > 100) {
+    newWidthPct = 100;
+    newHeightPct = (newWidthPct / newCropAspectRatioPx) * newViewportAspectRatio;
+  }
+  if (newHeightPct > 100) {
+    newHeightPct = 100;
+    newWidthPct = (newHeightPct * newCropAspectRatioPx) / newViewportAspectRatio;
+  }
+
+  const newPercentCrop: Crop = {
+    unit: "%",
+    x: centerPctX - newWidthPct / 2,
+    y: centerPctY - newHeightPct / 2,
+    width: newWidthPct,
+    height: newHeightPct,
+  };
+  // Recenter if the new crop goes out of the viewport bounds
+  newPercentCrop.x = clamp(newPercentCrop.x, 0, 100 - newPercentCrop.width);
+  newPercentCrop.y = clamp(newPercentCrop.y, 0, 100 - newPercentCrop.height);
+
+  return newPercentCrop;
 }
 
 /** Hook for tracking the current viewport dimensions.

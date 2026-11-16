@@ -4,21 +4,21 @@ import React, { type ReactElement, useCallback, useEffect, useState } from "reac
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 
-import { getDefaultViewerChannelSettings } from "../../../app/src/shared/constants";
-import { isSessionSnapshot, snapshotToViewerChannelSettings } from "../../../app/src/shared/utils/parseSnapshot";
 import {
   ImageViewerApp,
   parseViewerUrlParams,
   snapshotToViewerState,
   viewerMessageToParams,
-  writeM../../packages/app/src
+  writeMetadata,
   writeScenes,
-} from "../../src";
+} from "../../../app/src";
+import { getDefaultViewerChannelSettings } from "../../../app/src/shared/constants";
+import { isSessionSnapshot, snapshotToViewerChannelSettings } from "../../../app/src/shared/utils/parseSnapshot";
 import { select, useViewerState } from "../../../app/src/state/store";
 import type { ViewerState } from "../../../app/src/state/types";
 import { VOLEAPP_VERSION, VOLECORE_VERSION } from "../constants";
-import type { AppDataProps } from "../ty../../packages/app/src/state/store
-import { encodeImageUrlProp } from../../packages/app/src/state/types
+import type { AppDataProps } from "../types";
+import { encodeImageUrlProp } from "../utils/urls";
 import { FlexRowAlignCenter } from "./LandingPage/utils";
 
 import { type ErrorAlertDescription, useErrorAlert } from "../../../app/src/components/ErrorAlert";

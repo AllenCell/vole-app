@@ -138,9 +138,56 @@ export function syncCropToDimensions(
   return newPercentCrop;
 }
 
-/** Hook for tracking the current viewport dimensions.
+const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewportDimensions: [number, number]): Crop => {
+  const aspectRatio = cropDimensions[0] / cropDimensions[1];
+  const viewportAspectRatio = viewportDimensions[0] / viewportDimensions[1];
+  const isAspectRatioWider = viewportAspectRatio > aspectRatio;
+  const width = isAspectRatioWider ? (aspectRatio / viewportAspectRatio) * 100 : 100;
+  const height = isAspectRatioWider ? 100 : (viewportAspectRatio / aspectRatio) * 100;
+  return {
+    unit: "%",
+    x: (100 - width) / 2,
+    y: (100 - height) / 2,
+    width: width,
+    height: height,
+  };
+};
+
+export function useCrop(
+  viewportDimensionsPx: [number, number],
+  cropDimensionsPx: [number, number]
+): [Crop, (percentCrop: Crop) => void] {
+  const [percentCrop, setPercentCrop] = useState<Crop>(
+    getDefaultCropFromDimensions(cropDimensionsPx, viewportDimensionsPx)
+  );
+  const prevCropDimensionsRef = useRef(cropDimensionsPx);
+  const prevViewportDimensionsRef = useRef(viewportDimensionsPx);
+
+  // Update the crop when the viewport dimensions or crop dimensions change.
+  useEffect(() => {
+    const newPercentCrop = syncCropToDimensions(
+      percentCrop,
+      viewportDimensionsPx,
+      prevViewportDimensionsRef.current,
+      cropDimensionsPx,
+      prevCropDimensionsRef.current
+    );
+    prevCropDimensionsRef.current = cropDimensionsPx;
+    prevViewportDimensionsRef.current = viewportDimensionsPx;
+    if (newPercentCrop === percentCrop) {
+      return;
+    }
+    setPercentCrop(newPercentCrop);
+  }, [cropDimensionsPx, viewportDimensionsPx, percentCrop]);
+
+  return [percentCrop, setPercentCrop];
+}
+
+/**
+ * Hook for tracking the current viewport dimensions.
  * @param view3d The 3D view instance.
- * @param onUpdateDimensions Optional callback invoked when the viewport dimensions change.
+ * @param onUpdateDimensions Optional callback invoked when the viewport
+ * dimensions change.
  * @returns The current viewport dimensions as a tuple [width, height].
  */
 export function useViewportDimensions(

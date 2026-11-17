@@ -1,9 +1,10 @@
 import type { View3d } from "@aics/vole-core";
 import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
 import { Button, Card, InputNumber, Space, Tooltip } from "antd";
-import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useRef, useState } from "react";
 
 import { FlexColumn, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../shared/utils";
+import { useViewportDimensions } from "./utils";
 
 import { SettingsContainer, SettingsItem } from "../../shared/SettingsContainer";
 
@@ -12,11 +13,15 @@ import styles from "./styles.module.css";
 type RecordingDimensionControlsProps = {
   view3d: View3d;
   isRecording: boolean;
+  aspectRatio: number | null;
+  setAspectRatio: (aspectRatio: number | null) => void;
   settingsIndentPx: number;
 
   dimensions: [number, number];
   setDimensions: (dimensions: [number, number]) => void;
   exportDimensions: [number, number];
+
+  onClickSetToViewport?: () => void;
 };
 
 const enum RecordingDimensionControlsHtmlIds {
@@ -27,32 +32,43 @@ const enum RecordingDimensionControlsHtmlIds {
 }
 
 export default function RecordingDimensionControls(props: RecordingDimensionControlsProps): ReactElement {
-  const { view3d, isRecording, dimensions, setDimensions, exportDimensions } = props;
+  const {
+    view3d,
+    isRecording,
+    dimensions,
+    setDimensions: _setDimensions,
+    exportDimensions,
+    aspectRatio,
+    setAspectRatio,
+  } = props;
 
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   const [useCurrentViewportSize, setUseCurrentViewportSize] = useState(true);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(1);
-  const [viewportDimensions, setViewportDimensions] = useState([1, 1]);
 
-  //// MARK: Listeners
+  const [widthInput, setWidthInput] = useState(dimensions[0]);
+  const [heightInput, setHeightInput] = useState(dimensions[1]);
 
-  // Keep aspect ratio and and viewport dimensions in sync with viewport when
-  // the user is using the current viewport size.
-  useEffect(() => {
-    const canvasHtmlElement = view3d.getCanvasDOMElement();
-    const observer = new ResizeObserver(() => {
-      const width = canvasHtmlElement.width;
-      const height = canvasHtmlElement.height;
-      setViewportDimensions([width, height]);
+  // Sync width and height inputs with the current dimensions
+  const setDimensions = useCallback(
+    (dimensions: [number, number]) => {
+      setWidthInput(dimensions[0]);
+      setHeightInput(dimensions[1]);
+      _setDimensions(dimensions);
+    },
+    [_setDimensions]
+  );
+
+  const onViewportDimensionsUpdate = useCallback(
+    (dimensions: [number, number]): void => {
       if (useCurrentViewportSize && !isRecording) {
-        setDimensions([width, height]);
-        setAspectRatio(width / height);
+        setDimensions(dimensions);
+        setAspectRatio(dimensions[0] / dimensions[1]);
       }
-    });
-    observer.observe(canvasHtmlElement);
-    return () => observer.disconnect();
-  }, [isRecording, useCurrentViewportSize, view3d, setDimensions]);
+    },
+    [useCurrentViewportSize, isRecording, setDimensions, setAspectRatio]
+  );
+  const viewportDimensions = useViewportDimensions(view3d, onViewportDimensionsUpdate);
 
   //// MARK: Handlers
 
@@ -63,30 +79,32 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
         setAspectRatio(dimensions[0] / dimensions[1]);
       }
     },
-    [aspectRatio, setDimensions]
+    [aspectRatio, setAspectRatio, setDimensions]
   );
 
-  const handleSetWidth = (width: number | null): void => {
+  const handleSetWidth = (): void => {
+    let width = widthInput;
     if (width !== null) {
-      width = Math.max(1, width);
+      width = Math.round(Math.max(1, width));
       if (aspectRatio !== null) {
         let height = Math.max(Math.round(width / aspectRatio), 1);
-        setDimensions([Math.round(width), height]);
+        setDimensions([width, height]);
       } else {
-        setDimensions([Math.round(width), dimensions[1]]);
+        setDimensions([width, dimensions[1]]);
       }
     }
     setUseCurrentViewportSize(false);
   };
 
-  const handleSetHeight = (height: number | null): void => {
+  const handleSetHeight = (): void => {
+    let height = heightInput;
     if (height !== null) {
-      height = Math.max(1, height);
+      height = Math.round(Math.max(1, height));
       if (aspectRatio !== null) {
         let width = Math.max(Math.round(height * aspectRatio), 1);
-        setDimensions([width, Math.round(height)]);
+        setDimensions([width, height]);
       } else {
-        setDimensions([dimensions[0], Math.round(height)]);
+        setDimensions([dimensions[0], height]);
       }
     }
     setUseCurrentViewportSize(false);
@@ -117,6 +135,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
                 onClick={() => {
                   onSetDimensions(viewportDimensions as [number, number]);
                   setUseCurrentViewportSize(true);
+                  props.onClickSetToViewport?.();
                 }}
                 type={useCurrentViewportSize ? "primary" : "default"}
                 disabled={isRecording}
@@ -150,9 +169,11 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
                     disabled={isRecording}
                     aria-label="Width"
                     value={dimensions[0]}
-                    onChange={handleSetWidth}
+                    onChange={(value) => value !== null && setWidthInput(value)}
+                    onPressEnter={handleSetWidth}
+                    onBlur={handleSetWidth}
                     controls={false}
-                    style={{ width: "90px" }}
+                    style={{ width: "70px" }}
                   />
                 </Space.Compact>
                 <span style={{ padding: "0 4px" }}>×</span>
@@ -166,9 +187,11 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
                     disabled={isRecording}
                     aria-label="Height"
                     value={dimensions[1]}
-                    onChange={handleSetHeight}
+                    onChange={(value) => value !== null && setHeightInput(value)}
+                    onPressEnter={handleSetHeight}
+                    onBlur={handleSetHeight}
                     controls={false}
-                    style={{ width: "90px" }}
+                    style={{ width: "70px" }}
                   />
                 </Space.Compact>
                 <Tooltip

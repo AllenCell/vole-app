@@ -1,5 +1,5 @@
 import type { View3d } from "@aics/vole-core";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Crop } from "react-image-crop";
 
 import { clamp } from "../../../shared/utils/math";
@@ -156,6 +156,16 @@ function syncCropToDimensions(
   return newPercentCrop;
 }
 
+export const getDefaultFullCrop = (): Crop => {
+  return {
+    unit: "%",
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+  };
+};
+
 const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewportDimensions: [number, number]): Crop => {
   const aspectRatio = cropDimensions[0] / cropDimensions[1];
   const viewportAspectRatio = viewportDimensions[0] / viewportDimensions[1];
@@ -175,13 +185,33 @@ const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewport
 
 export function useCrop(
   viewportDimensionsPx: [number, number],
-  cropDimensionsPx: [number, number]
+  cropDimensionsPx: [number, number],
+  setCropDimensionsPx: (dimensions: [number, number]) => void,
+  lockAspectRatio: boolean
 ): [Crop, (percentCrop: Crop) => void] {
-  const [percentCrop, setPercentCrop] = useState<Crop>(
+  const [percentCrop, _setPercentCrop] = useState<Crop>(
     getDefaultCropFromDimensions(cropDimensionsPx, viewportDimensionsPx)
   );
   const prevCropDimensionsRef = useRef(cropDimensionsPx);
   const prevViewportDimensionsRef = useRef(viewportDimensionsPx);
+
+  // Handle changes to crop dimensions
+  const setPercentCrop = useCallback(
+    (newPercentCrop: Crop) => {
+      if (lockAspectRatio) {
+        _setPercentCrop(newPercentCrop);
+      }
+      // When aspect ratio is disabled, scale the crop dimensions accordingly.
+      const newCropDimensionsPx: [number, number] = [
+        Math.round((cropDimensionsPx[0] / percentCrop.width) * newPercentCrop.width),
+        Math.round((cropDimensionsPx[1] / percentCrop.height) * newPercentCrop.height),
+      ];
+      setCropDimensionsPx(newCropDimensionsPx);
+      _setPercentCrop(newPercentCrop);
+      prevCropDimensionsRef.current = newCropDimensionsPx;
+    },
+    [cropDimensionsPx, lockAspectRatio, percentCrop, setCropDimensionsPx]
+  );
 
   // Update the crop when the viewport dimensions or crop dimensions change.
   useEffect(() => {
@@ -197,7 +227,7 @@ export function useCrop(
     if (newPercentCrop === percentCrop) {
       return;
     }
-    setPercentCrop(newPercentCrop);
+    _setPercentCrop(newPercentCrop);
   }, [cropDimensionsPx, viewportDimensionsPx, percentCrop]);
 
   return [percentCrop, setPercentCrop];

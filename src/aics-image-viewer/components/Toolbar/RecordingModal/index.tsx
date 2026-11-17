@@ -11,6 +11,7 @@ import { RangeMode, RecordingMode } from "./types";
 import {
   getApproximateVideoFilesizeMb,
   getCanvasDimensions,
+  getDefaultFullCrop,
   getDurationLabel,
   getExportDimensions,
   getFrameCount,
@@ -118,10 +119,13 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     () => getExportDimensions(dimensionsInput, recordingMode === RecordingMode.VIDEO_MP4),
     [dimensionsInput, recordingMode]
   );
-
-  //// Crop
   const viewportDimensions = useViewportDimensions(view3d);
-  const [percentCrop, setPercentCrop] = useCrop(viewportDimensions, exportDimensions);
+  const [percentCrop, setPercentCrop] = useCrop(
+    viewportDimensions,
+    exportDimensions,
+    setDimensionsInput,
+    aspectRatio !== null
+  );
 
   //// Image prefix
   const defaultImagePrefix = useMemo(() => {
@@ -448,6 +452,9 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
               exportDimensions={exportDimensions}
               aspectRatio={aspectRatio}
               setAspectRatio={setAspectRatio}
+              onClickSetToViewport={() => {
+                setPercentCrop(getDefaultFullCrop());
+              }}
             />
 
             <SettingsContainer indentPx={RECORDING_SETTINGS_INDENT_PX} gapPx={6}>
@@ -519,6 +526,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
               isRecording={isRecording}
               percentCrop={percentCrop}
               setPercentCrop={setPercentCrop}
+              aspectRatio={aspectRatio}
             />
           </div>
         </div>

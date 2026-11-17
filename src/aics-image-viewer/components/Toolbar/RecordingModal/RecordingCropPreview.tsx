@@ -1,4 +1,4 @@
-import React, { type ReactElement } from "react";
+import React, { type ReactElement, useState } from "react";
 import ReactCrop, { type Crop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 
@@ -10,27 +10,36 @@ type RecordingCropPreviewProps = {
   isRecording: boolean;
   percentCrop: Crop;
   setPercentCrop: (crop: Crop) => void;
+  aspectRatio: number | null;
 };
 
 export default function RecordingCropPreview(props: RecordingCropPreviewProps): ReactElement {
-  const { cropDimensionsPx: cropDimensionsPx, percentCrop, setPercentCrop } = props;
+  const { aspectRatio, setPercentCrop, isRecording } = props;
+
+  // While dragging, ignore crops being passed by props
+  const [isDragging, setIsDragging] = useState(false);
+  const [currentCrop, setCurrentCrop] = useState(props.percentCrop);
+  const crop = isDragging ? currentCrop : props.percentCrop;
 
   //// MARK: Callbacks
 
   const handleOnChange = (_pixelCrop: Crop, percentCrop: Crop): void => {
+    setCurrentCrop(percentCrop);
     setPercentCrop(percentCrop);
   };
 
   return (
     <div style={{ maxWidth: props.width, maxHeight: props.height }}>
       <ReactCrop
-        crop={percentCrop}
+        crop={crop}
         onChange={handleOnChange}
-        aspect={props.cropDimensionsPx[0] / props.cropDimensionsPx[1]}
-        key={cropDimensionsPx[0] / cropDimensionsPx[1]}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={() => setIsDragging(false)}
+        // onComplete={handleOnChange}
+        aspect={aspectRatio ?? undefined}
         style={{ objectFit: "contain" }}
         keepSelection={true}
-        disabled={props.isRecording}
+        disabled={isRecording}
       >
         <img
           src={props.image}

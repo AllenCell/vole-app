@@ -1,4 +1,4 @@
-import React, { Children, type PropsWithChildren, type ReactElement, useEffect } from "react";
+import React, { type PropsWithChildren, type ReactElement, useEffect } from "react";
 import styled, { css } from "styled-components";
 
 import { removeUndefinedProperties } from "../../shared/utils/datatypes";
@@ -30,16 +30,9 @@ const defaultLabelStyle: React.CSSProperties = {
 
 /**
  * Adds formatting, alignment, and an optional label to a settings input. Use with `SettingsContainer`.
- *
- * If multiple children are provided, the children will be wrapped in a `div` container.
  */
 export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemProps>>): ReactElement {
   const props = { ...inputProps }; // Need to copy props to edit children
-
-  // Determine if children is a single element or multiple. If multiple, wrap in a div.
-  if (Children.count(props.children) !== 1) {
-    props.children = <div>{props.children}</div>;
-  }
 
   useEffect(() => {
     if (props.label && !props.htmlFor && !props.isDisplayOnly) {
@@ -67,7 +60,7 @@ export function SettingsItem(inputProps: PropsWithChildren<Partial<SettingsItemP
   return (
     <div style={props.style} className={SETTINGS_ITEM_CLASS}>
       {labelElement}
-      {props.children}
+      <div>{props.children}</div>
     </div>
   );
 }

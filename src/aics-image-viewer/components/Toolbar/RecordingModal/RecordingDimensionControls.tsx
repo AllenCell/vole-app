@@ -81,7 +81,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
 
   const handleSetWidth = (): void => {
     let width = widthInput;
-    if (width !== null && width !== dimensions[0]) {
+    if (width !== dimensions[0]) {
       width = Math.round(Math.max(1, width));
       if (aspectRatio !== null) {
         const height = Math.max(Math.round(width / aspectRatio), 1);
@@ -95,7 +95,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
 
   const handleSetHeight = (): void => {
     let height = heightInput;
-    if (height !== null && height !== dimensions[1]) {
+    if (height !== dimensions[1]) {
       height = Math.round(Math.max(1, height));
       if (aspectRatio !== null) {
         const width = Math.max(Math.round(height * aspectRatio), 1);

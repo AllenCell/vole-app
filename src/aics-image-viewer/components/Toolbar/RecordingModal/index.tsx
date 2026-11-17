@@ -99,7 +99,9 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   const [customMax, setCustomMax] = useState(totalFrames);
   const [frameIncrement, setFrameIncrement] = useState(1);
 
+  // Dimensions and cropping
   const [dimensionsInput, setDimensionsInput] = useState<[number, number]>([1, 1]);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(1);
   const exportDimensions = useMemo(
     () => getExportDimensions(dimensionsInput, recordingMode === RecordingMode.VIDEO_MP4),
     [dimensionsInput, recordingMode]
@@ -185,6 +187,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     await stopRecording(false);
     setErrorText("");
   };
+
+  //// MARK: Recording
 
   const handleStartRecord = async (): Promise<void> => {
     if (!volume) {
@@ -372,118 +376,122 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
         getContainer={() => modalContainerRef.current ?? document.body}
       >
         <div className={styles.exportModalContent} ref={exportModalRef}>
-          {/* Recording type (image/video) radio */}
-          <FlexColumnAlignCenter>
-            <Radio.Group
-              className={styles.exportModeRadioGroup}
-              value={recordingMode}
-              optionType="button"
-              onChange={(e) => setRecordingMode(e.target.value)}
-              disabled={isRecording}
-            >
-              <Radio className={styles.exportModeRadio} value={RecordingMode.IMAGE_SEQUENCE}>
-                PNG image sequence
-              </Radio>
-              {/* Optional tooltip here in case WebCodecs API is not enabled. */}
-              <Tooltip
-                title={"Video recording isn't supported by this browser."}
-                open={isWebCodecsEnabled ? false : undefined}
-                trigger={TOOLTIP_TRIGGER}
+          <div className={styles.exportModalSettingsContainer}>
+            {/* Recording type (image/video) radio */}
+            <FlexColumnAlignCenter>
+              <Radio.Group
+                className={styles.exportModeRadioGroup}
+                value={recordingMode}
+                optionType="button"
+                onChange={(e) => setRecordingMode(e.target.value)}
+                disabled={isRecording}
               >
-                <Radio
-                  className={styles.exportModeRadio}
-                  value={RecordingMode.VIDEO_MP4}
-                  disabled={isRecording || !isWebCodecsEnabled}
-                >
-                  MP4 Video
+                <Radio className={styles.exportModeRadio} value={RecordingMode.IMAGE_SEQUENCE}>
+                  PNG image sequence
                 </Radio>
-              </Tooltip>
-            </Radio.Group>
-          </FlexColumnAlignCenter>
-
-          <RecordingRangeControl
-            totalFrames={totalFrames}
-            rangeMode={rangeMode}
-            customMin={customMin}
-            customMax={customMax}
-            frameIncrement={frameIncrement}
-            setFrameIncrement={setFrameIncrement}
-            setRangeMode={setRangeMode}
-            setCustomMin={setCustomMin}
-            setCustomMax={setCustomMax}
-            recordingMode={recordingMode}
-            isRecording={isRecording}
-            indentPx={RECORDING_CARD_SETTINGS_INDENT_PX}
-          />
-
-          <RecordingDimensionControls
-            view3d={props.view3d}
-            isRecording={isRecording}
-            settingsIndentPx={RECORDING_CARD_SETTINGS_INDENT_PX}
-            dimensions={dimensionsInput}
-            setDimensions={setDimensionsInput}
-            exportDimensions={exportDimensions}
-          />
-
-          <SettingsContainer indentPx={RECORDING_SETTINGS_INDENT_PX} gapPx={6}>
-            {/* Video settings */}
-            {recordingMode === RecordingMode.VIDEO_MP4 && (
-              <>
-                <SettingsItem label="Frames per second" htmlFor={RecordingHtmlIds.FPS_INPUT}>
-                  <FlexRowAlignCenter $gap={6} style={{ alignItems: "center", paddingTop: 4 }}>
-                    <InputNumber
-                      id={RecordingHtmlIds.FPS_INPUT}
-                      value={fps}
-                      onChange={(value) => value !== null && Number.isFinite(value) && setFps(Math.max(0, value))}
-                      min={1}
-                      max={120}
-                      disabled={isRecording}
-                      width="175px"
-                    />
-                    <p className={styles.hintText}>({getDurationLabel(totalSeconds)})</p>
-                  </FlexRowAlignCenter>
-                </SettingsItem>
-                <SettingsItem label="Video quality" htmlFor={RecordingHtmlIds.VIDEO_QUALITY_RADIO}>
-                  <FlexRowAlignCenter $gap={6}>
-                    <Radio.Group
-                      className={styles.videoQualityRadioGroup}
-                      id={RecordingHtmlIds.VIDEO_QUALITY_RADIO}
-                      disabled={isRecording}
-                      options={videoQualityOptions}
-                      optionType="button"
-                      value={videoBitsPerSecond}
-                      onChange={(e) => setVideoBitsPerSecond(e.target.value)}
-                    />
-                    <p className={styles.hintText}>(~{approximateFilesizeMb})</p>
-                  </FlexRowAlignCenter>
-                </SettingsItem>
-              </>
-            )}
-            {/* Filename prefix */}
-            <SettingsItem label={"Filename"} htmlFor={RecordingHtmlIds.IMAGE_FILENAME_INPUT}>
-              <FlexRowAlignCenter $gap={6}>
-                <Input
-                  id={RecordingHtmlIds.IMAGE_FILENAME_INPUT}
-                  onChange={(event) => {
-                    setImagePrefixInput(event.target.value);
-                    setUseDefaultImagePrefix(false);
-                  }}
-                  value={imagePrefix}
-                  disabled={isRecording}
-                />
-                <p>{recordingMode === RecordingMode.IMAGE_SEQUENCE ? "#.png" : ".mp4"}</p>
-                <Button
-                  disabled={isRecording || useDefaultImagePrefix}
-                  onClick={() => {
-                    setUseDefaultImagePrefix(true);
-                  }}
+                {/* Optional tooltip here in case WebCodecs API is not enabled. */}
+                <Tooltip
+                  title={"Video recording isn't supported by this browser."}
+                  open={isWebCodecsEnabled ? false : undefined}
+                  trigger={TOOLTIP_TRIGGER}
                 >
-                  Reset
-                </Button>
-              </FlexRowAlignCenter>
-            </SettingsItem>
-          </SettingsContainer>
-          <br />
+                  <Radio
+                    className={styles.exportModeRadio}
+                    value={RecordingMode.VIDEO_MP4}
+                    disabled={isRecording || !isWebCodecsEnabled}
+                  >
+                    MP4 Video
+                  </Radio>
+                </Tooltip>
+              </Radio.Group>
+            </FlexColumnAlignCenter>
+
+            <RecordingRangeControl
+              totalFrames={totalFrames}
+              rangeMode={rangeMode}
+              customMin={customMin}
+              customMax={customMax}
+              frameIncrement={frameIncrement}
+              setFrameIncrement={setFrameIncrement}
+              setRangeMode={setRangeMode}
+              setCustomMin={setCustomMin}
+              setCustomMax={setCustomMax}
+              recordingMode={recordingMode}
+              isRecording={isRecording}
+              indentPx={RECORDING_CARD_SETTINGS_INDENT_PX}
+            />
+
+            <RecordingDimensionControls
+              view3d={props.view3d}
+              isRecording={isRecording}
+              settingsIndentPx={RECORDING_CARD_SETTINGS_INDENT_PX}
+              dimensions={dimensionsInput}
+              setDimensions={setDimensionsInput}
+              exportDimensions={exportDimensions}
+              aspectRatio={aspectRatio}
+              setAspectRatio={setAspectRatio}
+            />
+
+            <SettingsContainer indentPx={RECORDING_SETTINGS_INDENT_PX} gapPx={6}>
+              {/* Video settings */}
+              {recordingMode === RecordingMode.VIDEO_MP4 && (
+                <>
+                  <SettingsItem label="Frames per second" htmlFor={RecordingHtmlIds.FPS_INPUT}>
+                    <FlexRowAlignCenter $gap={6} style={{ alignItems: "center", paddingTop: 4 }}>
+                      <InputNumber
+                        id={RecordingHtmlIds.FPS_INPUT}
+                        value={fps}
+                        onChange={(value) => value !== null && Number.isFinite(value) && setFps(Math.max(0, value))}
+                        min={1}
+                        max={120}
+                        disabled={isRecording}
+                        width="175px"
+                      />
+                      <p className={styles.hintText}>({getDurationLabel(totalSeconds)})</p>
+                    </FlexRowAlignCenter>
+                  </SettingsItem>
+                  <SettingsItem label="Video quality" htmlFor={RecordingHtmlIds.VIDEO_QUALITY_RADIO}>
+                    <FlexRowAlignCenter $gap={6}>
+                      <Radio.Group
+                        className={styles.videoQualityRadioGroup}
+                        id={RecordingHtmlIds.VIDEO_QUALITY_RADIO}
+                        disabled={isRecording}
+                        options={videoQualityOptions}
+                        optionType="button"
+                        value={videoBitsPerSecond}
+                        onChange={(e) => setVideoBitsPerSecond(e.target.value)}
+                      />
+                      <p className={styles.hintText}>(~{approximateFilesizeMb})</p>
+                    </FlexRowAlignCenter>
+                  </SettingsItem>
+                </>
+              )}
+              {/* Filename prefix */}
+              <SettingsItem label={"Filename"} htmlFor={RecordingHtmlIds.IMAGE_FILENAME_INPUT}>
+                <FlexRowAlignCenter $gap={6}>
+                  <Input
+                    id={RecordingHtmlIds.IMAGE_FILENAME_INPUT}
+                    onChange={(event) => {
+                      setImagePrefixInput(event.target.value);
+                      setUseDefaultImagePrefix(false);
+                    }}
+                    value={imagePrefix}
+                    disabled={isRecording}
+                  />
+                  <p>{recordingMode === RecordingMode.IMAGE_SEQUENCE ? "#.png" : ".mp4"}</p>
+                  <Button
+                    disabled={isRecording || useDefaultImagePrefix}
+                    onClick={() => {
+                      setUseDefaultImagePrefix(true);
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </FlexRowAlignCenter>
+              </SettingsItem>
+            </SettingsContainer>
+            <br />
+          </div>
         </div>
       </Modal>
     </div>

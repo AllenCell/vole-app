@@ -1,3 +1,6 @@
+import type { View3d } from "@aics/vole-core";
+import { useEffect, useRef, useState } from "react";
+
 export function getFrameCount(min: number, max: number, frameIncrement: number): number {
   return Math.max(Math.ceil(((max ?? 1) - min + 1) / frameIncrement), 1);
 }
@@ -68,4 +71,41 @@ export function getExportDimensions(dimensionsInput: [number, number], enforceEv
   }
 
   return targetViewportDims;
+}
+
+/** Hook for tracking the current viewport dimensions.
+ * @param view3d The 3D view instance.
+ * @param onUpdateDimensions Optional callback invoked when the viewport dimensions change.
+ * @returns The current viewport dimensions as a tuple [width, height].
+ */
+export function useViewportDimensions(
+  view3d: View3d,
+  onUpdateDimensions?: (dimensions: [number, number]) => void
+): [number, number] {
+  const [viewportDimensions, setViewportDimensions] = useState<[number, number]>([
+    view3d.getCanvasDOMElement().width,
+    view3d.getCanvasDOMElement().height,
+  ]);
+  const onUpdateCallbackRef = useRef(onUpdateDimensions);
+  onUpdateCallbackRef.current = onUpdateDimensions;
+
+  // Keep viewport dimensions in sync with viewport
+  useEffect(() => {
+    const canvasHtmlElement = view3d.getCanvasDOMElement();
+    if (!canvasHtmlElement) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      const width = canvasHtmlElement.width;
+      const height = canvasHtmlElement.height;
+      setViewportDimensions([width, height]);
+      if (onUpdateCallbackRef.current) {
+        onUpdateCallbackRef.current([width, height]);
+      }
+    });
+    observer.observe(canvasHtmlElement);
+    return () => observer.disconnect();
+  }, [view3d]);
+
+  return viewportDimensions;
 }

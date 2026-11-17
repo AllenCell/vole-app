@@ -2,16 +2,11 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, type RouteObject, RouterProvider } from "react-router-dom";
 
-import {
-  decodeGitHubPagesUrl,
-  isEncodedPathUrl,
-  resolveBasename,
-  tryRemoveHashRouting,
-} from "../website/utils/gh_route_utils";
 import { VOLEAPP_BASENAME, VOLEAPP_BUILD_ENVIRONMENT, VOLEAPP_VERSION, VOLECORE_VERSION } from "./constants";
+import { decodeGitHubPagesUrl, isEncodedPathUrl, resolveBasename, tryRemoveHashRouting } from "./utils/gh_route_utils";
 
 import StyleProvider from "../../app/src/components/StyleProvider";
-import ErrorPage from "../website/components/ErrorPage";
+import ErrorPage from "./components/ErrorPage";
 
 import "./App.css";
 
@@ -41,7 +36,7 @@ const routes: RouteObject[] = [
   {
     path: "/",
     lazy: async () => {
-      const LandingPage = (await import("../website/components/LandingPage")).default;
+      const LandingPage = (await import("./components/LandingPage")).default;
       return {
         Component: () => <LandingPage />,
       };
@@ -51,7 +46,7 @@ const routes: RouteObject[] = [
   {
     path: "viewer",
     lazy: async () => {
-      const AppWrapper = (await import("../website/components/AppWrapper")).default;
+      const AppWrapper = (await import("./components/AppWrapper")).default;
       return {
         Component: () => <AppWrapper />,
       };

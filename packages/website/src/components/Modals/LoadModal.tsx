@@ -4,8 +4,8 @@ import Fuse from "fuse.js";
 import React, { type ReactElement, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 
-import { isSessionSnapshot } from "../../../../app/src/shared/utils/parseSnapshot";../../../packages/app/src
-import { snapshotToViewerChannelSettings, snapshotToViewerState, viewerMessageToParams } from "../../../src";
+import { snapshotToViewerChannelSettings, snapshotToViewerState, viewerMessageToParams } from "../../../../app/src";
+import { isSessionSnapshot } from "../../../../app/src/shared/utils/parseSnapshot";
 import type { AppDataProps } from "../../types";
 import { type RecentDataUrl, useRecentDataUrls } from "../../utils/react_utils";
 import { isValidUrl, normalizeFilePathSlashes } from "../../utils/urls";

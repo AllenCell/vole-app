@@ -16,6 +16,7 @@ import ImageSequenceRecorder from "../../../shared/utils/recorders/ImageSequence
 import Mp4VideoRecorder from "../../../shared/utils/recorders/Mp4VideoRecorder";
 import { SettingsContainer, SettingsItem } from "../../shared/SettingsContainer";
 import StyledInlineProgress from "../../shared/StyledInlineProgress";
+import CanvasOverlayRenderer from "./CanvasOverlayRenderer";
 import RecordingDimensionControls from "./RecordingDimensionControls";
 import RecordingRangeControl from "./RecordingRangeControl";
 

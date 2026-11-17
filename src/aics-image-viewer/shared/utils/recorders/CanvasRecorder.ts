@@ -71,7 +71,7 @@ export default class CanvasRecorder {
   private timerId: number;
 
   protected setFrameAndRender: (frame: number) => Promise<void>;
-  protected getCanvas: () => HTMLCanvasElement;
+  protected getCanvas: () => HTMLCanvasElement | OffscreenCanvas;
   protected options: RecordingOptions;
 
   /**
@@ -81,7 +81,7 @@ export default class CanvasRecorder {
    */
   constructor(
     setFrameAndRender: (frame: number) => Promise<void>,
-    getCanvas: () => HTMLCanvasElement,
+    getCanvas: () => HTMLCanvasElement | OffscreenCanvas,
     options?: Partial<RecordingOptions>
   ) {
     if (new.target === CanvasRecorder) {

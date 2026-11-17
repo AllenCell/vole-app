@@ -10,7 +10,13 @@ export default class ImageSequenceRecorder extends CanvasRecorder {
     await this.setFrameAndRender(frame);
     const canv = this.getCanvas();
 
-    const dataUrl = canv.toDataURL("image/png");
+    let dataUrl: string;
+    if (canv instanceof HTMLCanvasElement) {
+      dataUrl = canv.toDataURL("image/png");
+    } else {
+      // OffscreenCanvas
+      dataUrl = await canv.convertToBlob().then((blob) => URL.createObjectURL(blob));
+    }
 
     const frameSuffix: string = frame.toString().padStart(minDigits, "0");
     const downloadFilename = `${this.options.prefix}${frameSuffix}.png`;

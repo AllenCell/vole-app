@@ -17,7 +17,7 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
 
   constructor(
     setFrameAndRender: (frame: number) => Promise<void>,
-    getCanvas: () => HTMLCanvasElement,
+    getCanvas: () => HTMLCanvasElement | OffscreenCanvas,
     options: Partial<RecordingOptions>
   ) {
     super(setFrameAndRender, getCanvas, options);

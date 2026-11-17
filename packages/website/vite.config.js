@@ -30,6 +30,9 @@ const DEFAULT_CONFIG = {
   },
   server: {
     port: 9020,
+    fs: {
+      allow: ["../.."],
+    },
   },
   optimizeDeps: {
     // geotiff is only imported indirectly in vole-core workers, so vite will

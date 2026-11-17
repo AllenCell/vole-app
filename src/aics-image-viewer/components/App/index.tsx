@@ -392,6 +392,8 @@ const App: React.FC<AppProps> = (props) => {
   // Disable opening in new tab when viewing raw image data.
   const openInNewTab = hasRawImage ? undefined : openInNewTabCallback;
 
+  const [canvasResolution, setCanvasResolution] = useState<[number, number] | null>(null);
+
   // Imperative callbacks /////////////////////////////////////////////////////
 
   const saveIsosurface = useCallback(
@@ -604,6 +606,7 @@ const App: React.FC<AppProps> = (props) => {
               view3d={view3d}
               volume={volume.image}
               playControls={playControls}
+              setCanvasResolution={setCanvasResolution}
             />
             <CellViewerCanvasWrapper
               view3d={view3d}
@@ -617,6 +620,7 @@ const App: React.FC<AppProps> = (props) => {
               playingAxis={volume.playingAxis}
               setScrubbingAxis={volume.setScrubbingAxis}
               appHeight={props.appHeight}
+              canvasResolution={canvasResolution}
               visibleControls={visibleControls}
               clippingPanelOpen={clippingPanelOpen}
               onClippingPanelOpenChange={setClippingPanelOpen}

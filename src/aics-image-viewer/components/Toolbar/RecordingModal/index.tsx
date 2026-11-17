@@ -119,13 +119,10 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     () => getExportDimensions(dimensionsInput, recordingMode === RecordingMode.VIDEO_MP4),
     [dimensionsInput, recordingMode]
   );
-  const viewportDimensions = useViewportDimensions(view3d);
-  const [percentCrop, setPercentCrop] = useCrop(
-    viewportDimensions,
-    exportDimensions,
-    setDimensionsInput,
-    aspectRatio !== null
-  );
+  const viewportDimensions = useViewportDimensions(view3d, async () => {
+    view3d.capture((dataUrl: string) => setImage(dataUrl));
+  });
+  const [percentCrop, setPercentCrop] = useCrop(viewportDimensions, exportDimensions, setDimensionsInput, aspectRatio);
 
   //// Image prefix
   const defaultImagePrefix = useMemo(() => {

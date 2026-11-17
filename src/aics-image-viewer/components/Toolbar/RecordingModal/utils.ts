@@ -187,7 +187,7 @@ export function useCrop(
   viewportDimensionsPx: [number, number],
   cropDimensionsPx: [number, number],
   setCropDimensionsPx: (dimensions: [number, number]) => void,
-  lockAspectRatio: boolean
+  aspectRatio: number | null
 ): [Crop, (percentCrop: Crop) => void] {
   const [percentCrop, _setPercentCrop] = useState<Crop>(
     getDefaultCropFromDimensions(cropDimensionsPx, viewportDimensionsPx)
@@ -198,8 +198,17 @@ export function useCrop(
   // Handle changes to crop dimensions
   const setPercentCrop = useCallback(
     (newPercentCrop: Crop) => {
-      if (lockAspectRatio) {
+      newPercentCrop = { ...newPercentCrop };
+
+      // Require that crops be at least 10% of the width of the overall image
+      newPercentCrop.width = Math.max(10, newPercentCrop.width);
+      const viewportAspectRatio = viewportDimensionsPx[0] / viewportDimensionsPx[1];
+      const minHeight = aspectRatio !== null ? (newPercentCrop.width / aspectRatio) * viewportAspectRatio : 10;
+      newPercentCrop.height = Math.max(minHeight, newPercentCrop.height);
+
+      if (aspectRatio !== null) {
         _setPercentCrop(newPercentCrop);
+        return;
       }
       // When aspect ratio is disabled, scale the crop dimensions accordingly.
       const newCropDimensionsPx: [number, number] = [
@@ -210,7 +219,7 @@ export function useCrop(
       _setPercentCrop(newPercentCrop);
       prevCropDimensionsRef.current = newCropDimensionsPx;
     },
-    [cropDimensionsPx, lockAspectRatio, percentCrop, setCropDimensionsPx]
+    [cropDimensionsPx, aspectRatio, percentCrop, viewportDimensionsPx, setCropDimensionsPx]
   );
 
   // Update the crop when the viewport dimensions or crop dimensions change.

@@ -239,7 +239,10 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
         max = clamp(customMax - 1, min, totalFrames - 1);
     }
 
-    const { canvasDimensions, canvasOffset } = getCanvasDimensions(exportDimensions, percentCrop);
+    const { canvasDimensionsPx: canvasDimensions, canvasOffsetPx: canvasOffset } = getCanvasDimensions(
+      exportDimensions,
+      percentCrop
+    );
     setCanvasResolution(canvasDimensions);
 
     const setFrame = async (frame: number): Promise<void> => {

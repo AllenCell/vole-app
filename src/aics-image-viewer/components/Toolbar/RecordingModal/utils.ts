@@ -76,12 +76,17 @@ export function getExportDimensions(dimensionsInput: [number, number], enforceEv
   return targetViewportDims;
 }
 
+/**
+ * Determines the required pixel dimensions of the viewport canvas so that the
+ * cropped region has the target export resolution. Also returns the offset, in
+ * pixels, of the cropped region within the canvas.
+ */
 export function getCanvasDimensions(
   exportDimensions: [number, number],
   percentCrop: Crop
 ): {
-  canvasDimensions: [number, number];
-  canvasOffset: [number, number];
+  canvasDimensionsPx: [number, number];
+  canvasOffsetPx: [number, number];
 } {
   const canvasWidthPx = Math.ceil(exportDimensions[0] / (percentCrop.width / 100));
   const canvasHeightPx = Math.ceil(exportDimensions[1] / (percentCrop.height / 100));
@@ -89,8 +94,8 @@ export function getCanvasDimensions(
   const offsetY = Math.round((percentCrop.y / 100) * canvasHeightPx);
 
   return {
-    canvasDimensions: [canvasWidthPx, canvasHeightPx],
-    canvasOffset: [offsetX, offsetY],
+    canvasDimensionsPx: [canvasWidthPx, canvasHeightPx],
+    canvasOffsetPx: [offsetX, offsetY],
   };
 }
 
@@ -183,19 +188,40 @@ const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewport
 
 //// MARK: Hooks
 
+/**
+ * Hook for managing a percentage {@linkcode Crop} region within a resizable
+ * viewport. Synchronizes changes to the crop region with the target image size,
+ * and updates crop bound and aspect ratio relative to the viewport.
+ *
+ * @param viewportDimensionsPx The dimensions of the viewport in pixels.
+ * @param targetDimensionsPx The target dimensions of the output image in
+ * pixels.
+ * @param setTargetDimensionsPx Callback to update the target dimensions of the
+ * output image in pixels. Called if the crop region's size changes when
+ * `aspectRatio` is `null`.
+ * @param aspectRatio The desired aspect ratio of the target output image, or
+ * null if freeform. When freeform, changes to the crop region's size will also
+ * be used to update the target dimensions, via calls to `setTargetDimensionsPx`.
+ * @returns a tuple containing:
+ *   - The current crop region as a percent {@linkcode Crop} object.
+ *   - A setter function to update the crop region, which accepts a percent
+ *     {@linkcode Crop} object.
+ */
 export function useCrop(
   viewportDimensionsPx: [number, number],
-  cropDimensionsPx: [number, number],
-  setCropDimensionsPx: (dimensions: [number, number]) => void,
+  targetDimensionsPx: [number, number],
+  setTargetDimensionsPx: (dimensions: [number, number]) => void,
   aspectRatio: number | null
 ): [Crop, (percentCrop: Crop) => void] {
   const [percentCrop, _setPercentCrop] = useState<Crop>(
-    getDefaultCropFromDimensions(cropDimensionsPx, viewportDimensionsPx)
+    getDefaultCropFromDimensions(targetDimensionsPx, viewportDimensionsPx)
   );
-  const prevCropDimensionsRef = useRef(cropDimensionsPx);
+  const prevCropDimensionsRef = useRef(targetDimensionsPx);
   const prevViewportDimensionsRef = useRef(viewportDimensionsPx);
 
-  // Handle changes to crop dimensions
+  // Wrap the percent crop setter to 1) allow changes to the crop aspect ratio
+  // to update the crop dimensions, and 2) prevent the crop from becoming too
+  // small.
   const setPercentCrop = useCallback(
     (newPercentCrop: Crop) => {
       newPercentCrop = { ...newPercentCrop };
@@ -210,16 +236,16 @@ export function useCrop(
         _setPercentCrop(newPercentCrop);
         return;
       }
-      // When aspect ratio is disabled, scale the crop dimensions accordingly.
+      // When aspect ratio is disabled, scale the crop dimensions to match.
       const newCropDimensionsPx: [number, number] = [
-        Math.round((cropDimensionsPx[0] / percentCrop.width) * newPercentCrop.width),
-        Math.round((cropDimensionsPx[1] / percentCrop.height) * newPercentCrop.height),
+        Math.round((targetDimensionsPx[0] / percentCrop.width) * newPercentCrop.width),
+        Math.round((targetDimensionsPx[1] / percentCrop.height) * newPercentCrop.height),
       ];
-      setCropDimensionsPx(newCropDimensionsPx);
+      setTargetDimensionsPx(newCropDimensionsPx);
       _setPercentCrop(newPercentCrop);
       prevCropDimensionsRef.current = newCropDimensionsPx;
     },
-    [cropDimensionsPx, aspectRatio, percentCrop, viewportDimensionsPx, setCropDimensionsPx]
+    [targetDimensionsPx, aspectRatio, percentCrop, viewportDimensionsPx, setTargetDimensionsPx]
   );
 
   // Update the crop when the viewport dimensions or crop dimensions change.
@@ -228,16 +254,16 @@ export function useCrop(
       percentCrop,
       viewportDimensionsPx,
       prevViewportDimensionsRef.current,
-      cropDimensionsPx,
+      targetDimensionsPx,
       prevCropDimensionsRef.current
     );
-    prevCropDimensionsRef.current = cropDimensionsPx;
+    prevCropDimensionsRef.current = targetDimensionsPx;
     prevViewportDimensionsRef.current = viewportDimensionsPx;
     if (newPercentCrop === percentCrop) {
       return;
     }
     _setPercentCrop(newPercentCrop);
-  }, [cropDimensionsPx, viewportDimensionsPx, percentCrop]);
+  }, [targetDimensionsPx, viewportDimensionsPx, percentCrop]);
 
   return [percentCrop, setPercentCrop];
 }

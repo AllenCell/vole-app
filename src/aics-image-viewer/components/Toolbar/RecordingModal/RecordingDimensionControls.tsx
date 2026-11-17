@@ -40,6 +40,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     exportDimensions,
     aspectRatio,
     setAspectRatio,
+    onClickSetToViewport,
   } = props;
 
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -76,8 +77,8 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     setDimensions(viewportDimensions);
     setAspectRatio(viewportDimensions[0] / viewportDimensions[1]);
     setUseCurrentViewportSize(true);
-    props.onClickSetToViewport?.();
-  }, [viewportDimensions, aspectRatio, setAspectRatio, setDimensions]);
+    onClickSetToViewport?.();
+  }, [viewportDimensions, aspectRatio, setAspectRatio, setDimensions, onClickSetToViewport]);
 
   const handleSetWidth = (): void => {
     let width = widthInput;

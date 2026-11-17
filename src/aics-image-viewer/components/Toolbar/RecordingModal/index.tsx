@@ -284,6 +284,21 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     });
   };
 
+  //// MARK: Listeners
+
+  // By default the toolbar captures scrolling events and translates vertical
+  // scrolling into horizontal toolbar scrolling. Disable this for the recording modal so it can scroll.
+  useEffect(() => {
+    const container = modalContainerRef.current;
+    const handleWheel = (e: WheelEvent): void => {
+      e.stopPropagation();
+    };
+    container?.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      container?.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
   //////////////////////////////////////////////////////////
   //// MARK: Rendering
   //////////////////////////////////////////////////////////

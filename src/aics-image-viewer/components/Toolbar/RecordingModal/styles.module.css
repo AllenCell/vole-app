@@ -3,6 +3,12 @@
   & :global(.ant-modal-title) {
     text-align: left;
   }
+
+  & div:global(.ant-modal-container) {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 80vh;
+  }
 }
 
 .exportModalContent {
@@ -10,7 +16,6 @@
   flex-direction: column;
   gap: 10px;
   margin-top: 15px;
-  overflow: auto;
 
   & p {
     margin: 0;

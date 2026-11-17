@@ -1,6 +1,5 @@
 {
   "name": "vol-e",
-  "version": "3.8.0",
   "description": "web view of cell volume images",
   "private": true,
   "workspaces": [

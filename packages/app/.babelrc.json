@@ -1,10 +1,5 @@
 {
-  "presets": [
-    ["@babel/preset-env", { "modules": false }],
-    ["@dr.pogodin/babel-preset-svgr", { "icon": true }],
-    "@babel/preset-react",
-    "@babel/preset-typescript"
-  ],
+  "presets": [["@dr.pogodin/babel-preset-svgr", { "icon": true }], "@babel/preset-react"],
   "env": {
     "es": {
       "plugins": [

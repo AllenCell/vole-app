@@ -24,7 +24,7 @@ export default defineConfig([
   globalIgnores([
     "public/",
     "es/",
-    "type-declarations/",
+    "types/",
     "packages/app/src/shared/utils/webgl-debug.js",
     "postcss.*.js",
     "vite.config.js",

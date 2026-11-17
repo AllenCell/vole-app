@@ -11,7 +11,7 @@ environment.txt
 # Built files
 es/
 imageviewer/
-type-declarations/
+types/
 
 # Local environment configuration
 .env*.local

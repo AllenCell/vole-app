@@ -16,7 +16,12 @@
   "type": "commonjs",
   "main": "es/index.js",
   "scripts": {
+    "start": "vite dev",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "antd": "^6.6.2",
+    "react": "^19.2.8"
   },
   "devDependencies": {}
 }

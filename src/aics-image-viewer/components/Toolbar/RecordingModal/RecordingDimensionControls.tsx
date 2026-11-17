@@ -36,7 +36,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     view3d,
     isRecording,
     dimensions,
-    setDimensions: _setDimensions,
+    setDimensions: setParentDimensions,
     exportDimensions,
     aspectRatio,
     setAspectRatio,
@@ -54,9 +54,9 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     (dimensions: [number, number]) => {
       setWidthInput(dimensions[0]);
       setHeightInput(dimensions[1]);
-      _setDimensions(dimensions);
+      setParentDimensions(dimensions);
     },
-    [_setDimensions]
+    [setParentDimensions]
   );
 
   const onViewportDimensionsUpdate = useCallback(
@@ -72,19 +72,16 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
 
   //// MARK: Handlers
 
-  const onSetDimensions = useCallback(
-    (dimensions: [number, number]) => {
-      setDimensions(dimensions);
-      if (aspectRatio) {
-        setAspectRatio(dimensions[0] / dimensions[1]);
-      }
-    },
-    [aspectRatio, setAspectRatio, setDimensions]
-  );
+  const handleSetToViewportDimensions = useCallback(() => {
+    setDimensions(viewportDimensions);
+    setAspectRatio(viewportDimensions[0] / viewportDimensions[1]);
+    setUseCurrentViewportSize(true);
+    props.onClickSetToViewport?.();
+  }, [viewportDimensions, aspectRatio, setAspectRatio, setDimensions]);
 
   const handleSetWidth = (): void => {
     let width = widthInput;
-    if (width !== null) {
+    if (width !== null && width !== dimensions[0]) {
       width = Math.round(Math.max(1, width));
       if (aspectRatio !== null) {
         const height = Math.max(Math.round(width / aspectRatio), 1);
@@ -92,13 +89,13 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
       } else {
         setDimensions([width, dimensions[1]]);
       }
+      setUseCurrentViewportSize(false);
     }
-    setUseCurrentViewportSize(false);
   };
 
   const handleSetHeight = (): void => {
     let height = heightInput;
-    if (height !== null) {
+    if (height !== null && height !== dimensions[1]) {
       height = Math.round(Math.max(1, height));
       if (aspectRatio !== null) {
         const width = Math.max(Math.round(height * aspectRatio), 1);
@@ -106,8 +103,8 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
       } else {
         setDimensions([dimensions[0], height]);
       }
+      setUseCurrentViewportSize(false);
     }
-    setUseCurrentViewportSize(false);
   };
 
   const onToggleAspectRatio = (): void => {
@@ -132,11 +129,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
           <FlexColumn style={{ alignItems: "flex-start", paddingBottom: "8px" }} $gap={6}>
             <FlexRow $gap={6}>
               <Button
-                onClick={() => {
-                  onSetDimensions(viewportDimensions as [number, number]);
-                  setUseCurrentViewportSize(true);
-                  props.onClickSetToViewport?.();
-                }}
+                onClick={handleSetToViewportDimensions}
                 type={useCurrentViewportSize ? "primary" : "default"}
                 disabled={isRecording}
               >
@@ -168,7 +161,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
                     id={RecordingDimensionControlsHtmlIds.FRAME_DIMENSION_WIDTH_INPUT_ID}
                     disabled={isRecording}
                     aria-label="Width"
-                    value={dimensions[0]}
+                    value={widthInput}
                     onChange={(value) => value !== null && setWidthInput(value)}
                     onPressEnter={handleSetWidth}
                     onBlur={handleSetWidth}
@@ -186,7 +179,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
                     id={RecordingDimensionControlsHtmlIds.FRAME_DIMENSION_HEIGHT_INPUT_ID}
                     disabled={isRecording}
                     aria-label="Height"
-                    value={dimensions[1]}
+                    value={heightInput}
                     onChange={(value) => value !== null && setHeightInput(value)}
                     onPressEnter={handleSetHeight}
                     onBlur={handleSetHeight}

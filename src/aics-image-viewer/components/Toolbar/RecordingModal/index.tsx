@@ -16,6 +16,7 @@ import ImageSequenceRecorder from "../../../shared/utils/recorders/ImageSequence
 import Mp4VideoRecorder from "../../../shared/utils/recorders/Mp4VideoRecorder";
 import { SettingsContainer, SettingsItem } from "../../shared/SettingsContainer";
 import StyledInlineProgress from "../../shared/StyledInlineProgress";
+import CanvasOverlayRenderer from "./CanvasOverlayRenderer";
 import RecordingDimensionControls from "./RecordingDimensionControls";
 import RecordingRangeControl from "./RecordingRangeControl";
 
@@ -217,11 +218,25 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
         max = clamp(customMax - 1, min, totalFrames - 1);
     }
 
+    setCanvasResolution(exportDimensions);
+
     const setFrame = async (frame: number): Promise<void> => {
       await view3d.setTime(volume, frame);
       view3d.redraw(true);
     };
     const getCanvas = (): HTMLCanvasElement => view3d.getCanvasDOMElement();
+
+    // Create canvas overlay
+    const canvasOverlay = new CanvasOverlayRenderer({
+      source: {
+        setFrame,
+        getCanvas,
+        // TODO: Update when users are able to define a crop region.
+        offsetPx: [0, 0],
+        dimensionsPx: exportDimensions,
+      },
+    });
+
     const options: Partial<RecordingOptions> = {
       min,
       max,
@@ -253,13 +268,12 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
       },
     };
     if (recordingMode === RecordingMode.VIDEO_MP4) {
-      recorderRef.current = new Mp4VideoRecorder(setFrame, getCanvas, options);
+      recorderRef.current = new Mp4VideoRecorder(canvasOverlay.setFrame, canvasOverlay.getCanvas, options);
     } else {
-      recorderRef.current = new ImageSequenceRecorder(setFrame, getCanvas, options);
+      recorderRef.current = new ImageSequenceRecorder(canvasOverlay.setFrame, canvasOverlay.getCanvas, options);
     }
     const recorder = recorderRef.current;
 
-    setCanvasResolution(exportDimensions);
     // Wrap in a timeout so the canvas resolution is applied before capturing
     // frames.
     await setTimeout(() => {

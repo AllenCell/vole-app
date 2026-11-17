@@ -2,10 +2,12 @@ import React, { type ReactElement, useState } from "react";
 import ReactCrop, { type Crop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 
+import styles from "./styles.module.css";
+
 type RecordingCropPreviewProps = {
   cropDimensionsPx: [number, number];
-  width: number;
-  height: number;
+  width: number | string;
+  height: number | string;
   image: string | undefined;
   isRecording: boolean;
   percentCrop: Crop;
@@ -41,11 +43,7 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
         keepSelection={true}
         disabled={isRecording}
       >
-        <img
-          src={props.image}
-          alt="Crop preview"
-          style={{ objectFit: "contain", maxWidth: props.width, maxHeight: props.height }}
-        />
+        <img className={styles.cropImage} src={props.image} alt="Crop preview" />
       </ReactCrop>
     </div>
   );

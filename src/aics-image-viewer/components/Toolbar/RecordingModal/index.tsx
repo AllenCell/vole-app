@@ -122,7 +122,13 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   const viewportDimensions = useViewportDimensions(view3d, async () => {
     view3d.capture((dataUrl: string) => setImage(dataUrl));
   });
-  const [percentCrop, setPercentCrop] = useCrop(viewportDimensions, exportDimensions, setDimensionsInput, aspectRatio);
+  const [percentCrop, setPercentCrop] = useCrop(
+    viewportDimensions,
+    exportDimensions,
+    setDimensionsInput,
+    aspectRatio,
+    isRecording
+  );
 
   //// Image prefix
   const defaultImagePrefix = useMemo(() => {
@@ -244,10 +250,11 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
       percentCrop
     );
     setCanvasResolution(canvasDimensions);
-
     const setFrame = async (frame: number): Promise<void> => {
       await view3d.setTime(volume, frame);
       view3d.redraw(true);
+      // Update cropping preview with frame
+      view3d.capture((dataUrl) => setImage(dataUrl));
     };
     const getCanvas = (): HTMLCanvasElement => view3d.getCanvasDOMElement();
 
@@ -520,8 +527,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
           <div className={styles.cropWindowContainer}>
             <RecordingCropPreview
               cropDimensionsPx={exportDimensions}
-              width={500}
-              height={500}
+              width={"calc(min(500px, 30vw))"}
+              height={"calc(min(500px, 30vw))"}
               image={image}
               isRecording={isRecording}
               percentCrop={percentCrop}

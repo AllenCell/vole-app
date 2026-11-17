@@ -211,7 +211,8 @@ export function useCrop(
   viewportDimensionsPx: [number, number],
   targetDimensionsPx: [number, number],
   setTargetDimensionsPx: (dimensions: [number, number]) => void,
-  aspectRatio: number | null
+  aspectRatio: number | null,
+  isRecording: boolean
 ): [Crop, (percentCrop: Crop) => void] {
   const [percentCrop, _setPercentCrop] = useState<Crop>(
     getDefaultCropFromDimensions(targetDimensionsPx, viewportDimensionsPx)
@@ -232,6 +233,10 @@ export function useCrop(
       const minHeight = aspectRatio !== null ? (newPercentCrop.width / aspectRatio) * viewportAspectRatio : 10;
       newPercentCrop.height = Math.max(minHeight, newPercentCrop.height);
 
+      // Bound crop to viewport area
+      newPercentCrop.x = clamp(newPercentCrop.x, 0, 100 - newPercentCrop.width);
+      newPercentCrop.y = clamp(newPercentCrop.y, 0, 100 - newPercentCrop.height);
+
       if (aspectRatio !== null) {
         _setPercentCrop(newPercentCrop);
         return;
@@ -250,6 +255,9 @@ export function useCrop(
 
   // Update the crop when the viewport dimensions or crop dimensions change.
   useEffect(() => {
+    if (isRecording) {
+      return;
+    }
     const newPercentCrop = syncCropToDimensions(
       percentCrop,
       viewportDimensionsPx,
@@ -263,7 +271,7 @@ export function useCrop(
       return;
     }
     _setPercentCrop(newPercentCrop);
-  }, [targetDimensionsPx, viewportDimensionsPx, percentCrop]);
+  }, [targetDimensionsPx, viewportDimensionsPx, percentCrop, isRecording]);
 
   return [percentCrop, setPercentCrop];
 }

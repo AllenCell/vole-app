@@ -1,7 +1,7 @@
 import type { View3d } from "@aics/vole-core";
 import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
 import { Button, Card, InputNumber, Space, Tooltip } from "antd";
-import React, { type ReactElement, useCallback, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
 import { FlexColumn, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../shared/utils";
 import { useViewportDimensions } from "./utils";
@@ -51,6 +51,14 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
   const [heightInput, setHeightInput] = useState(dimensions[1]);
 
   //// MARK: Listeners
+
+  // Sync prop dimensions to input dimensions on change
+  useEffect(() => {
+    setWidthInput(dimensions[0]);
+    setHeightInput(dimensions[1]);
+  }, [dimensions]);
+
+  //// MARK: Callbacks
 
   // Sync width and height inputs with the current dimensions
   const setDimensions = useCallback(

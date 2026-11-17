@@ -18,6 +18,7 @@ import {
 import type { IsosurfaceFormat, MetadataRecord, XYZ } from "../../shared/types";
 import { controlPointsToRamp, initializeLut } from "../../shared/utils/controlPointsToLut";
 import { useConstructor } from "../../shared/utils/hooks";
+import useOpenInNewTab from "../../shared/utils/useOpenInNewTab";
 import { findFirstChannelMatch } from "../../shared/utils/viewerChannelSettings";
 import { select, useViewerState } from "../../state/store";
 import { applyTripleSliceIndices, subscribeImageToState, subscribeViewToState } from "../../state/subscribers";
@@ -57,6 +58,7 @@ const defaultVisibleControls: ControlVisibilityFlags = {
   showBoundingBoxButton: true,
   metadataViewer: true,
   scaleLevelControls: true,
+  openInNewTabButton: false,
 };
 
 const defaultProps = {
@@ -67,6 +69,7 @@ const defaultProps = {
 
   imageUrl: "",
   parentImageUrl: "",
+  standaloneViewerHref: undefined,
 
   appHeight: "100vh",
   visibleControls: defaultVisibleControls,
@@ -402,6 +405,10 @@ const App: React.FC<AppProps> = (props) => {
   const [clippingPanelOpen, setClippingPanelOpen] = useState(true);
   const clippingPanelOpenTimeout = useRef<number>(0);
 
+  const openInNewTabCallback = useOpenInNewTab(props.standaloneViewerHref, props, () => view3d?.getCameraState());
+  // Disable opening in new tab when viewing raw image data.
+  const openInNewTab = hasRawImage ? undefined : openInNewTabCallback;
+
   // Imperative callbacks /////////////////////////////////////////////////////
 
   const saveIsosurface = useCallback(
@@ -578,10 +585,6 @@ const App: React.FC<AppProps> = (props) => {
     (): ControlVisibilityFlags => ({ ...defaultVisibleControls, ...props.visibleControls }),
     [props.visibleControls]
   );
-  const pixelSize = useMemo(
-    (): [number, number, number] => (image ? image.imageInfo.physicalPixelSize.toArray() : [1, 1, 1]),
-    [image]
-  );
   const resetCamera = useMemo(() => view3d.resetCamera.bind(view3d), [view3d]);
 
   return (
@@ -612,7 +615,6 @@ const App: React.FC<AppProps> = (props) => {
             // image state
             imageName={image?.name}
             hasImage={!!image}
-            pixelSize={pixelSize}
             channelDataChannels={image?.channels}
             channelGroupedByType={volume.channelGroupedByType}
             // functions
@@ -621,6 +623,7 @@ const App: React.FC<AppProps> = (props) => {
             onApplyColorPresets={applyColorPresets}
             viewerChannelSettings={props.viewerChannelSettings}
             metadata={metadata}
+            resetToInitialViewerState={resetToSavedViewerState}
           />
         </Sider>
         <Layout className="cell-viewer-wrapper" style={{ margin: props.canvasMargin }}>
@@ -633,11 +636,11 @@ const App: React.FC<AppProps> = (props) => {
               canPathTrace={view3d ? view3d.hasWebGL2() : false}
               resetCamera={resetCamera}
               downloadScreenshot={saveScreenshot}
-              resetToSavedViewerState={resetToSavedViewerState}
               visibleControls={visibleControls}
               multiscaleDims={image?.imageInfo.imageInfo.multiscaleLevelDims}
               multiscaleIndex={image?.imageInfo.multiscaleLevel}
               onHeightChange={setToolbarHeight}
+              openInNewTab={openInNewTab}
             />
             <CellViewerCanvasWrapper
               view3d={view3d}

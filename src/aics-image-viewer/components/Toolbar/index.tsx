@@ -1,8 +1,7 @@
 import type { VolumeDims } from "@aics/vole-core";
-import { ReloadOutlined } from "@ant-design/icons";
 import { Button, Radio, Select, Tooltip } from "antd";
 import { debounce } from "lodash";
-import React from "react";
+import React, { useEffect } from "react";
 
 import { select, useViewerState } from "../../state/store";
 import { ImageType, RenderMode, ViewMode } from "../../state/types";
@@ -26,7 +25,7 @@ type ToolbarProps = {
 
   resetCamera: () => void;
   downloadScreenshot: () => void;
-  resetToSavedViewerState: () => void;
+  openInNewTab?: () => void;
 
   visibleControls: {
     autoRotateButton: boolean;
@@ -36,22 +35,11 @@ type ToolbarProps = {
     showAxesButton: boolean;
     showBoundingBoxButton: boolean;
     scaleLevelControls: boolean;
+    openInNewTabButton: boolean;
   };
 };
 
 const RESIZE_DEBOUNCE_DELAY = 50;
-
-const visuallyHiddenStyle: React.CSSProperties = {
-  position: "absolute",
-  width: "1px",
-  height: "1px",
-  padding: "0",
-  margin: "-1px",
-  overflow: "hidden",
-  clip: "rect(0, 0, 0, 0)",
-  whiteSpace: "nowrap",
-  borderWidth: "0",
-};
 
 const Toolbar: React.FC<ToolbarProps> = (props) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -156,14 +144,23 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
 
   const scrollX = (amount: number): number => (barRef.current!.scrollLeft += amount);
 
-  // Translate vertical scrolling into horizontal scrolling
-  const wheelHandler: React.WheelEventHandler<HTMLDivElement> = (e) => {
-    e.preventDefault();
-    if (e.deltaY === 0) {
-      return;
-    }
-    scrollX(e.deltaY);
-  };
+  // Translate vertical scrolling into horizontal scrolling for the toolbar;
+  // this must be set via a `useEffect` because the listener is not passive (can
+  // prevent default behavior).
+  useEffect(() => {
+    const bar = barRef.current;
+    const wheelHandler = (e: WheelEvent): void => {
+      e.preventDefault();
+      if (e.deltaY === 0) {
+        return;
+      }
+      scrollX(e.deltaY);
+    };
+    bar?.addEventListener("wheel", wheelHandler, { passive: false });
+    return () => {
+      bar?.removeEventListener("wheel", wheelHandler);
+    };
+  }, []);
 
   const toggleAxis = (): void => changeViewerSetting("showAxes", !showAxes);
   const toggleBoundingBox = (): void => changeViewerSetting("showBoundingBox", !showBoundingBox);
@@ -194,15 +191,8 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
         <ViewerIcon type="closePanel" style={{ fontSize: "12px", transform: "rotate(180deg)" }} />
       </div>
 
-      <div className="viewer-toolbar" ref={barRef} onWheel={wheelHandler} onScroll={checkScrollBtnVisible}>
-        <div className="viewer-toolbar-left" ref={leftRef}>
-          <Tooltip placement="bottom" title="Reset to initial settings" trigger={["focus", "hover"]}>
-            <Button className="ant-btn-icon-only btn-borderless" onClick={props.resetToSavedViewerState}>
-              <ReloadOutlined />
-              <span style={visuallyHiddenStyle}>Reset to initial settings</span>
-            </Button>
-          </Tooltip>
-        </div>
+      <div className="viewer-toolbar" ref={barRef} onScroll={checkScrollBtnVisible}>
+        <div className="viewer-toolbar-left" ref={leftRef}></div>
 
         <div className="viewer-toolbar-center" ref={centerRef}>
           {renderGroup1 && (
@@ -327,6 +317,13 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
               <ViewerIcon type="camera" />
             </Button>
           </Tooltip>
+          {visibleControls.openInNewTabButton && props.openInNewTab && (
+            <Tooltip placement="bottom" title="Open in new tab">
+              <Button className="ant-btn-icon-only btn-borderless" onClick={props.openInNewTab}>
+                <ViewerIcon type="openInNewTab" />
+              </Button>
+            </Tooltip>
+          )}
         </div>
       </div>
       <div

@@ -2,10 +2,13 @@
   "name": "@aics/vole-app",
   "version": "3.7.0",
   "description": "web viewer for 3D volume data",
-  "main": "es/index.js",
-  "module": "es/index.js",
-  "browser": "es/index.js",
-  "types": "types",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./types/index.d.ts",
+      "default": "./es/index.js"
+    }
+  },
   "files": [
     "es",
     "types",

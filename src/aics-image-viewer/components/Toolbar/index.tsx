@@ -139,11 +139,10 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
   useEffect(() => {
     const bar = barRef.current;
     const wheelHandler = (e: WheelEvent): void => {
-      e.preventDefault();
-      if (e.deltaY === 0) {
-        return;
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        scrollX(e.deltaY);
       }
-      scrollX(e.deltaY);
     };
     bar?.addEventListener("wheel", wheelHandler, { passive: false });
     return () => {

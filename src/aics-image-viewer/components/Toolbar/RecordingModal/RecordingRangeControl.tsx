@@ -3,7 +3,7 @@ import React, { type ReactElement } from "react";
 
 import { clamp } from "../../../shared/utils/math";
 import { FlexRowAlignCenter } from "../../shared/utils";
-import { RangeMode, RecordingMode } from "./types";
+import { RangeMode } from "./types";
 import { getFrameCount } from "./utils";
 
 import { SettingsContainer, SettingsItem } from "../../shared/SettingsContainer";
@@ -21,7 +21,6 @@ type RecordingRangeControlProps = {
   setCustomMax: (customMin: number) => void;
   setCustomMin: (customMax: number) => void;
 
-  recordingMode: RecordingMode;
   isRecording: boolean;
 
   indentPx: number;
@@ -50,7 +49,6 @@ export default function RecordingRangeControl(props: RecordingRangeControlProps)
     setRangeMode,
     setCustomMax,
     setCustomMin,
-    recordingMode,
     isRecording,
   } = props;
 

@@ -28,7 +28,6 @@
     "gh-build-nightly": "vite build --base=/vole-app/",
     "s3-build": "vite build",
     "release-build": "vite build",
-    "docker-build": "vite build",
     "dev": "vite dev",
     "lint": "eslint --config ./.eslintrc --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts --ext .tsx ./",
     "lint-fix": "eslint --fix --config ./.eslintrc --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts --ext .tsx ./",

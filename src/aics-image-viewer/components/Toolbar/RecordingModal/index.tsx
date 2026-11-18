@@ -455,7 +455,6 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
                 setRangeMode={setRangeMode}
                 setCustomMin={setCustomMin}
                 setCustomMax={setCustomMax}
-                recordingMode={recordingMode}
                 isRecording={isRecording}
                 indentPx={RECORDING_CARD_SETTINGS_INDENT_PX}
               />

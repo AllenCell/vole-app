@@ -1,4 +1,4 @@
-import { encodeGitHubPagesUrl } from "../../website/utils/gh_route_utils";
+import { encodeGitHubPagesUrl } from "../utils/gh_route_utils";
 
 // Hide the default 404 page content and just show a blank screen.
 // The content should only be shown if the browser doesn't support JavaScript.

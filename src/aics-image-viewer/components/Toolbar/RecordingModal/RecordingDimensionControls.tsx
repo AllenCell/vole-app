@@ -1,5 +1,5 @@
 import type { View3d } from "@aics/vole-core";
-import { AlertOutlined, LockOutlined, UnlockOutlined, WarningOutlined } from "@ant-design/icons";
+import { LockOutlined, UnlockOutlined, WarningOutlined } from "@ant-design/icons";
 import { Button, Card, InputNumber, Space, Tooltip } from "antd";
 import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
@@ -90,7 +90,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     setAspectRatio(viewportDimensions[0] / viewportDimensions[1]);
     setUseCurrentViewportSize(true);
     onClickSetToViewport?.();
-  }, [viewportDimensions, aspectRatio, setAspectRatio, setDimensions, onClickSetToViewport]);
+  }, [viewportDimensions, setAspectRatio, setDimensions, onClickSetToViewport]);
 
   const handleSetWidth = (): void => {
     let width = widthInput;

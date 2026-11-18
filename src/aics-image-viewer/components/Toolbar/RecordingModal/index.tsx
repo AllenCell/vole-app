@@ -32,6 +32,9 @@ import RecordingRangeControl from "./RecordingRangeControl";
 
 import styles from "./styles.module.css";
 
+// Maximum image resolution (width or height) in pixels
+const MAX_IMAGE_RESOLUTION = 8192;
+
 const enum RecordingHtmlIds {
   FINAL_DIMENSIONS_TEXT = "recording-modal-final-dimensions-text",
   FPS_INPUT = "recording-modal-fps-input",
@@ -129,6 +132,15 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     aspectRatio,
     isRecording
   );
+  const sizeWarningText = useMemo(() => {
+    const { canvasDimensionsPx } = getCanvasDimensions(exportDimensions, percentCrop);
+    if (exportDimensions[0] > MAX_IMAGE_RESOLUTION || exportDimensions[1] > MAX_IMAGE_RESOLUTION) {
+      return "The frame size is too large (max 8192)";
+    } else if (canvasDimensionsPx[0] > MAX_IMAGE_RESOLUTION || canvasDimensionsPx[1] > MAX_IMAGE_RESOLUTION) {
+      return "The crop is too small for the selected resolution.";
+    }
+    return undefined;
+  }, [exportDimensions, percentCrop]);
 
   //// Image prefix
   const defaultImagePrefix = useMemo(() => {
@@ -245,11 +257,9 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
         max = clamp(customMax - 1, min, totalFrames - 1);
     }
 
-    const { canvasDimensionsPx: canvasDimensions, canvasOffsetPx: canvasOffset } = getCanvasDimensions(
-      exportDimensions,
-      percentCrop
-    );
-    setCanvasResolution(canvasDimensions);
+    const { canvasDimensionsPx, canvasOffsetPx } = getCanvasDimensions(exportDimensions, percentCrop);
+    setCanvasResolution(canvasDimensionsPx);
+
     const setFrame = async (frame: number): Promise<void> => {
       await view3d.setTime(volume, frame);
       view3d.redraw(true);
@@ -263,7 +273,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
       source: {
         setFrame,
         getCanvas,
-        offsetPx: canvasOffset,
+        offsetPx: canvasOffsetPx,
         dimensionsPx: exportDimensions,
       },
     });
@@ -462,6 +472,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
               onClickSetToViewport={() => {
                 setPercentCrop(getDefaultFullCrop());
               }}
+              sizeWarningText={sizeWarningText}
             />
 
             <SettingsContainer indentPx={RECORDING_SETTINGS_INDENT_PX} gapPx={6}>

@@ -1,5 +1,5 @@
 import type { View3d } from "@aics/vole-core";
-import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
+import { AlertOutlined, LockOutlined, UnlockOutlined, WarningOutlined } from "@ant-design/icons";
 import { Button, Card, InputNumber, Space, Tooltip } from "antd";
 import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
@@ -20,6 +20,7 @@ type RecordingDimensionControlsProps = {
   dimensions: [number, number];
   setDimensions: (dimensions: [number, number]) => void;
   exportDimensions: [number, number];
+  sizeWarningText: string | undefined;
 
   onClickSetToViewport?: () => void;
 };
@@ -41,6 +42,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     aspectRatio,
     setAspectRatio,
     onClickSetToViewport,
+    sizeWarningText,
   } = props;
 
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -217,11 +219,18 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
             </FlexColumn>
           </FlexColumn>
         </SettingsItem>
-        <SettingsItem label="Exported file dimensions" isDisplayOnly={true}>
-          <p
-            className={styles.hintText}
-            id={RecordingDimensionControlsHtmlIds.FINAL_DIMENSIONS_TEXT}
-          >{`${exportDimensions[0]} × ${exportDimensions[1]}`}</p>
+        <SettingsItem label="Exported file dimensions" isDisplayOnly={true} labelStyle={{ marginBottom: "auto" }}>
+          <p className={styles.hintText} id={RecordingDimensionControlsHtmlIds.FINAL_DIMENSIONS_TEXT}>
+            {`${exportDimensions[0]} × ${exportDimensions[1]} `}
+          </p>
+          <p style={{ color: "var(--color-alert-warning-text)", textAlign: "left", minHeight: "22px" }}>
+            {sizeWarningText && (
+              <>
+                <WarningOutlined />
+                {sizeWarningText}
+              </>
+            )}
+          </p>
         </SettingsItem>
       </SettingsContainer>
     </Card>

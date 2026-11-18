@@ -153,7 +153,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
 
   const imagePrefix = useMemo((): string => {
     if (useDefaultImagePrefix) {
-      if (recordingMode === RecordingMode.IMAGE_SEQUENCE) {
+      if (recordingMode === RecordingMode.IMAGE_SEQUENCE || recordingMode === RecordingMode.SCREENSHOT) {
         // Add separator between prefix and frame number
         return defaultImagePrefix + "-";
       } else {

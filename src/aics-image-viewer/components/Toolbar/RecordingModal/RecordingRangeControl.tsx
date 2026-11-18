@@ -93,9 +93,6 @@ export default function RecordingRangeControl(props: RecordingRangeControlProps)
               </span>
             )}
           </Radio>
-          <Radio value={RangeMode.CURRENT} disabled={isRecording || recordingMode === RecordingMode.VIDEO_MP4}>
-            Current frame only
-          </Radio>
           <Radio value={RangeMode.CUSTOM}>Custom range</Radio>
 
           {rangeMode === RangeMode.CUSTOM ? (

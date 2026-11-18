@@ -403,15 +403,6 @@ const App: React.FC<AppProps> = (props) => {
     [image, view3d]
   );
 
-  const saveScreenshot = useCallback((): void => {
-    view3d.capture((dataUrl: string) => {
-      const anchor = document.createElement("a");
-      anchor.href = dataUrl;
-      anchor.download = "screenshot.png";
-      anchor.click();
-    });
-  }, [view3d]);
-
   const { metadataFormatter } = props;
   const metadata = useMemo((): MetadataRecord => {
     let imageMetadata = image?.imageMetadata as MetadataRecord;
@@ -598,7 +589,6 @@ const App: React.FC<AppProps> = (props) => {
               hasCellId={!!props.cellId}
               canPathTrace={view3d ? view3d.hasWebGL2() : false}
               resetCamera={resetCamera}
-              downloadScreenshot={saveScreenshot}
               visibleControls={visibleControls}
               multiscaleDims={image?.imageInfo.imageInfo.multiscaleLevelDims}
               multiscaleIndex={image?.imageInfo.multiscaleLevel}

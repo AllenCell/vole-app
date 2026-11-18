@@ -27,7 +27,6 @@ type ToolbarProps = {
   playControls: PlayControls;
 
   resetCamera: () => void;
-  downloadScreenshot: () => void;
   openInNewTab?: () => void;
   setCanvasResolution: (resolution: [number, number] | null) => void;
 
@@ -301,11 +300,7 @@ const Toolbar: React.FC<ToolbarProps> = (props) => {
               hasFov={props.hasCellId && props.hasParentImage}
             />
           </Tooltip>
-          <Tooltip placement="bottom" title="Screenshot">
-            <Button className="ant-btn-icon-only btn-borderless" onClick={props.downloadScreenshot}>
-              <ViewerIcon type="camera" />
-            </Button>
-          </Tooltip>
+
           <RecordingButton
             view3d={props.view3d}
             volume={props.volume}

@@ -1,13 +1,21 @@
 {
-  "extends": "./tsconfig.base",
-  "include": ["src", "website", "packages/app/__mocks__", "vitest.config.ts"],
-  "exclude": ["node_modules"],
   "compilerOptions": {
-    // Required for top-level await in `__mocks__/zustand.ts`, which is used for
-    // unit tests. When transpiling and saving types, `tsconfig.base.json` is
-    // used instead, which targets ES6.
-    "module": "ES2022",
-    "target": "ES2017",
-    "outDir": "./dist"
-  }
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "downlevelIteration": true,
+    "jsx": "preserve",
+    "lib": ["DOM", "ES2022", "ES6", "DOM.Iterable", "ScriptHost", "es2016.array.include"],
+    "module": "es2022",
+    "moduleResolution": "Node",
+    "target": "es2017",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true
+  },
+  "files": [],
+  "references": [{ "path": "packages/app" }, { "path": "packages/website" }]
 }

@@ -2,6 +2,7 @@ import type { View3d } from "@aics/vole-core";
 import { LockOutlined, UnlockOutlined, WarningOutlined } from "@ant-design/icons";
 import { Button, Card, InputNumber, Space, Tooltip } from "antd";
 import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import type { Crop } from "react-image-crop";
 
 import { FlexColumn, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../shared/utils";
 import { useViewportDimensions } from "./utils";
@@ -21,6 +22,7 @@ type RecordingDimensionControlsProps = {
   setDimensions: (dimensions: [number, number]) => void;
   exportDimensions: [number, number];
   sizeWarningText: string | undefined;
+  percentCrop: Crop;
 
   onClickSetToViewport?: () => void;
 };
@@ -43,6 +45,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     setAspectRatio,
     onClickSetToViewport,
     sizeWarningText,
+    percentCrop,
   } = props;
 
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -59,6 +62,13 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     setWidthInput(dimensions[0]);
     setHeightInput(dimensions[1]);
   }, [dimensions]);
+
+  // Clear useCurrentViewportSize when the crop is modified
+  useEffect(() => {
+    if (Math.abs(percentCrop.width - 100) > 0.0001 || Math.abs(percentCrop.height - 100) > 0.0001) {
+      setUseCurrentViewportSize(false);
+    }
+  }, [percentCrop]);
 
   //// MARK: Callbacks
 
@@ -226,8 +236,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
           <p style={{ color: "var(--color-alert-warning-text)", textAlign: "left", minHeight: "22px" }}>
             {sizeWarningText && (
               <>
-                <WarningOutlined />
-                {sizeWarningText}
+                <WarningOutlined /> {sizeWarningText}
               </>
             )}
           </p>

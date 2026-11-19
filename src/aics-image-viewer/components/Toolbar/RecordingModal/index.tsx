@@ -116,15 +116,15 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   const [frameIncrement, setFrameIncrement] = useState(1);
 
   // Dimensions and cropping
-  const [dimensionsInput, setDimensionsInput] = useState<[number, number]>([1, 1]);
+  const viewportDimensions = useViewportDimensions(view3d, async () => {
+    view3d.capture((dataUrl: string) => setImage(dataUrl));
+  });
+  const [dimensionsInput, setDimensionsInput] = useState<[number, number]>(viewportDimensions);
   const [aspectRatio, setAspectRatio] = useState<number | null>(1);
   const exportDimensions = useMemo(
     () => getExportDimensions(dimensionsInput, recordingMode === RecordingMode.VIDEO_MP4),
     [dimensionsInput, recordingMode]
   );
-  const viewportDimensions = useViewportDimensions(view3d, async () => {
-    view3d.capture((dataUrl: string) => setImage(dataUrl));
-  });
   const [percentCrop, setPercentCrop] = useCrop(
     viewportDimensions,
     exportDimensions,
@@ -132,6 +132,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     aspectRatio,
     isRecording
   );
+
   const sizeWarningText = useMemo(() => {
     const { canvasDimensionsPx } = getCanvasDimensions(exportDimensions, percentCrop);
     if (exportDimensions[0] > MAX_IMAGE_RESOLUTION || exportDimensions[1] > MAX_IMAGE_RESOLUTION) {
@@ -472,6 +473,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
               onClickSetToViewport={() => {
                 setPercentCrop(getDefaultFullCrop());
               }}
+              percentCrop={percentCrop}
               sizeWarningText={sizeWarningText}
             />
 

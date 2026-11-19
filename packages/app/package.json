@@ -20,6 +20,10 @@
   "bugs": {
     "url": "https://github.com/allen-cell-animated/vole-app/issues"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/allen-cell-animated/vole-app.git"

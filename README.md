@@ -25,7 +25,7 @@ or as React component:
 
 - `npm install @aics/vole-app`
 - import the app as `import { ImageViewerApp } from "@aics/vole-app"`
-- send in props as is shown in [`public/index.jsx`](public/index.tsx)
+- send in props as is shown in [`packages/website/src/components/AppWrapper.tsx`](packages/website/src/components/AppWrapper.tsx)
 
 ```jsx
 <ImageViewerApp

@@ -23,7 +23,7 @@
   "dependencies": {
     "antd": "^6.6.2",
     "react": "^19.2.8",
-    "@aics/vole-app": "^3.7.0"
+    "@aics/vole-app": "^3.8.0"
   },
   "devDependencies": {}
 }

@@ -4,11 +4,12 @@ import { defineConfig } from "vite";
 import svgr from "vite-plugin-svgr";
 
 const voleCorePackagePath = require.resolve("@aics/vole-core/package.json", { paths: [__dirname] });
+const voleAppPackagePath = require.resolve("@aics/vole-app/package.json", { paths: [__dirname] });
 
 // Add version number and build timestamp to the environment variables
 const DEFAULT_ENV = {
   ...process.env,
-  VITE_VOLEAPP_VERSION: JSON.stringify(process.env.npm_package_version),
+  VITE_VOLEAPP_VERSION: JSON.stringify(require(voleAppPackagePath).version),
   VITE_VOLECORE_VERSION: JSON.stringify(require(voleCorePackagePath).version),
   VITE_BUILD_TIME_UTC: JSON.stringify(Date.now().toString()),
 };

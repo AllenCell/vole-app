@@ -1,8 +1,9 @@
 {
   "name": "@aics/vole-app",
-  "version": "3.7.0",
+  "version": "3.8.0",
   "description": "web viewer for 3D volume data",
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "development": "./src/index.ts",
       "types": "./types/index.d.ts",
@@ -24,7 +25,6 @@
     "url": "git+https://github.com/allen-cell-animated/vole-app.git"
   },
   "scripts": {
-    "start": "vite dev",
     "gh-build-nightly": "vite build --base=/vole-app/",
     "s3-build": "vite build",
     "release-build": "vite build",

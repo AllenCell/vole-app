@@ -1,10 +1,10 @@
 export const enum RangeMode {
   ALL,
-  CURRENT,
   CUSTOM,
 }
 
 export const enum RecordingMode {
+  SCREENSHOT,
   IMAGE_SEQUENCE,
   VIDEO_MP4,
 }

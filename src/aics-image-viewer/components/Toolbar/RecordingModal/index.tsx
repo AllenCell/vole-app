@@ -105,7 +105,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   const [percentComplete, setPercentComplete] = useState(0);
   const recorderRef = useRef<CanvasRecorder | null>(null);
   const [errorText, setErrorText] = useState("");
-  const [recordingMode, _setRecordingMode] = useState(RecordingMode.IMAGE_SEQUENCE);
+  const [recordingMode, setRecordingMode] = useState(RecordingMode.SCREENSHOT);
 
   //// Frame range
   const totalFrames = volume.imageInfo.times;
@@ -153,7 +153,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
 
   const imagePrefix = useMemo((): string => {
     if (useDefaultImagePrefix) {
-      if (recordingMode === RecordingMode.IMAGE_SEQUENCE) {
+      if (recordingMode === RecordingMode.IMAGE_SEQUENCE || recordingMode === RecordingMode.SCREENSHOT) {
         // Add separator between prefix and frame number
         return defaultImagePrefix + "-";
       } else {
@@ -179,15 +179,6 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     setCustomMin((min) => clamp(min, 0, maxFrame));
     setCustomMax((max) => clamp(max, 0, maxFrame));
   }, [volume]);
-
-  // Override setRecordingMode when switching to video; users should not choose current frame only
-  // (since exporting the current frame only as a video doesn't really make sense.)
-  const setRecordingMode = (mode: RecordingMode): void => {
-    _setRecordingMode(mode);
-    if (mode === RecordingMode.VIDEO_MP4 && rangeMode === RangeMode.CURRENT) {
-      setRangeMode(RangeMode.ALL);
-    }
-  };
 
   //////////////////////////////////////////////////////////
   //// MARK: Callbacks
@@ -242,20 +233,21 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     /** Min and max are both inclusive */
     let min: number, max: number;
     const currentFrame = useViewerState.getState().time;
-    switch (rangeMode) {
-      case RangeMode.ALL:
-        min = 0;
-        max = totalFrames - 1;
-        break;
-      case RangeMode.CURRENT:
-        min = currentFrame;
-        max = currentFrame;
-        break;
-      case RangeMode.CUSTOM:
-        // Clamp range values in case of unsafe input.
-        // Also decrement to match 0-based indexing.
-        min = clamp(customMin - 1, 0, totalFrames - 1);
-        max = clamp(customMax - 1, min, totalFrames - 1);
+    if (recordingMode === RecordingMode.SCREENSHOT) {
+      min = currentFrame;
+      max = currentFrame;
+    } else {
+      switch (rangeMode) {
+        case RangeMode.ALL:
+          min = 0;
+          max = totalFrames - 1;
+          break;
+        case RangeMode.CUSTOM:
+          // Clamp range values in case of unsafe input.
+          // Also decrement to match 0-based indexing.
+          min = clamp(customMin - 1, 0, totalFrames - 1);
+          max = clamp(customMax - 1, min, totalFrames - 1);
+      }
     }
 
     const { canvasDimensionsPx, canvasOffsetPx } = getCanvasDimensions(exportDimensions, percentCrop);
@@ -312,6 +304,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     if (recordingMode === RecordingMode.VIDEO_MP4) {
       recorderRef.current = new Mp4VideoRecorder(canvasOverlay.setFrame, canvasOverlay.getCanvas, options);
     } else {
+      // Screenshot and image sequence
       recorderRef.current = new ImageSequenceRecorder(canvasOverlay.setFrame, canvasOverlay.getCanvas, options);
     }
     const recorder = recorderRef.current;
@@ -371,6 +364,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
 
   // Footer for the Export modal.
   // Layout: Optional Progress meter - Export/Stop Button - Cancel Button
+  const actionButtonTitle = isRecording ? "Stop" : recordingMode === RecordingMode.SCREENSHOT ? "Save" : "Record";
+
   const modalFooter = (
     <div className={styles.modalFooter}>
       <div
@@ -390,7 +385,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
           disabled={isPlayingCloseAnimation}
           id={isRecording ? "export-modal-stop-button" : "export-modal-export-button"}
         >
-          {isRecording ? "Stop" : "Record"}
+          {actionButtonTitle}
         </Button>
       </div>
       <div>
@@ -426,8 +421,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
                 onChange={(e) => setRecordingMode(e.target.value)}
                 disabled={isRecording}
               >
-                <Radio className={styles.exportModeRadio} value={RecordingMode.IMAGE_SEQUENCE}>
-                  PNG image sequence
+                <Radio className={styles.exportModeRadio} value={RecordingMode.SCREENSHOT}>
+                  Screenshot
                 </Radio>
                 {/* Optional tooltip here in case WebCodecs API is not enabled. */}
                 <Tooltip
@@ -440,27 +435,30 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
                     value={RecordingMode.VIDEO_MP4}
                     disabled={isRecording || !isWebCodecsEnabled}
                   >
-                    MP4 Video
+                    Video
                   </Radio>
                 </Tooltip>
+                <Radio className={styles.exportModeRadio} value={RecordingMode.IMAGE_SEQUENCE}>
+                  Image Sequence
+                </Radio>
               </Radio.Group>
             </FlexColumnAlignCenter>
 
-            <RecordingRangeControl
-              totalFrames={totalFrames}
-              rangeMode={rangeMode}
-              customMin={customMin}
-              customMax={customMax}
-              frameIncrement={frameIncrement}
-              setFrameIncrement={setFrameIncrement}
-              setRangeMode={setRangeMode}
-              setCustomMin={setCustomMin}
-              setCustomMax={setCustomMax}
-              recordingMode={recordingMode}
-              isRecording={isRecording}
-              indentPx={RECORDING_CARD_SETTINGS_INDENT_PX}
-            />
-
+            {recordingMode !== RecordingMode.SCREENSHOT && (
+              <RecordingRangeControl
+                totalFrames={totalFrames}
+                rangeMode={rangeMode}
+                customMin={customMin}
+                customMax={customMax}
+                frameIncrement={frameIncrement}
+                setFrameIncrement={setFrameIncrement}
+                setRangeMode={setRangeMode}
+                setCustomMin={setCustomMin}
+                setCustomMax={setCustomMax}
+                isRecording={isRecording}
+                indentPx={RECORDING_CARD_SETTINGS_INDENT_PX}
+              />
+            )}
             <RecordingDimensionControls
               view3d={props.view3d}
               isRecording={isRecording}
@@ -524,7 +522,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
                     value={imagePrefix}
                     disabled={isRecording}
                   />
-                  <p>{recordingMode === RecordingMode.IMAGE_SEQUENCE ? "#.png" : ".mp4"}</p>
+                  <p>{recordingMode === RecordingMode.VIDEO_MP4 ? ".mp4" : "#.png"}</p>
                   <Button
                     disabled={isRecording || useDefaultImagePrefix}
                     onClick={() => {

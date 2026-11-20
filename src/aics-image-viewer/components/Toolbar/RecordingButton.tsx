@@ -1,11 +1,11 @@
 import type { View3d, Volume } from "@aics/vole-core";
-import { VideoCameraOutlined } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
 import React, { type ReactElement, useState } from "react";
 
 import { TOOLTIP_TRIGGER } from "../../shared/constants";
 import type PlayControls from "../../shared/utils/playControls";
 
+import ViewerIcon from "../shared/ViewerIcon";
 import RecordingModal from "./RecordingModal";
 
 type RecordingButtonProps = {
@@ -20,13 +20,13 @@ export default function RecordingButton(props: RecordingButtonProps): ReactEleme
 
   return (
     <div>
-      <Tooltip placement="bottom" title="Record" trigger={TOOLTIP_TRIGGER}>
+      <Tooltip placement="bottom" title="Recording" trigger={TOOLTIP_TRIGGER}>
         <Button
           className="ant-btn-icon-only btn-borderless"
           onClick={() => setIsModalOpen(true)}
           disabled={!props.volume}
         >
-          <VideoCameraOutlined />
+          <ViewerIcon type="camera" />
         </Button>
       </Tooltip>
 

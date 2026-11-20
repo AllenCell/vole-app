@@ -8,7 +8,16 @@ import type PlayControls from "../../../shared/utils/playControls";
 import { select, useViewerState } from "../../../state/store";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../shared/utils";
 import { RangeMode, RecordingMode } from "./types";
-import { getApproximateVideoFilesizeMb, getDurationLabel, getExportDimensions, getFrameCount } from "./utils";
+import {
+  getApproximateVideoFilesizeMb,
+  getCanvasDimensions,
+  getDefaultFullCrop,
+  getDurationLabel,
+  getExportDimensions,
+  getFrameCount,
+  useCrop,
+  useViewportDimensions,
+} from "./utils";
 
 import type { RecordingOptions } from "../../../shared/utils/recorders/CanvasRecorder";
 import type CanvasRecorder from "../../../shared/utils/recorders/CanvasRecorder";
@@ -17,10 +26,14 @@ import Mp4VideoRecorder from "../../../shared/utils/recorders/Mp4VideoRecorder";
 import { SettingsContainer, SettingsItem } from "../../shared/SettingsContainer";
 import StyledInlineProgress from "../../shared/StyledInlineProgress";
 import CanvasOverlayRenderer from "./CanvasOverlayRenderer";
+import RecordingCropPreview from "./RecordingCropPreview";
 import RecordingDimensionControls from "./RecordingDimensionControls";
 import RecordingRangeControl from "./RecordingRangeControl";
 
 import styles from "./styles.module.css";
+
+// Maximum image resolution (width or height) in pixels
+const MAX_IMAGE_RESOLUTION = 8192;
 
 const enum RecordingHtmlIds {
   FINAL_DIMENSIONS_TEXT = "recording-modal-final-dimensions-text",
@@ -73,6 +86,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
     [_setIsModalOpen, view3d, volume]
   );
 
+  const [image, setImage] = useState<string>();
+
   // On open, save the current frame so it can be restored on modal close.
   useEffect(() => {
     if (isModalOpen) {
@@ -81,8 +96,9 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
       originalFrameRef.current = useViewerState.getState().time;
       // Disable auto-rotation
       changeViewerSetting("autorotate", false);
+      view3d.capture((dataUrl: string) => setImage(dataUrl));
     }
-  }, [isModalOpen, changeViewerSetting, playControls]);
+  }, [isModalOpen, changeViewerSetting, playControls, view3d]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [isPlayingCloseAnimation, setIsPlayingCloseAnimation] = useState(false);
@@ -100,12 +116,32 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   const [frameIncrement, setFrameIncrement] = useState(1);
 
   // Dimensions and cropping
-  const [dimensionsInput, setDimensionsInput] = useState<[number, number]>([1, 1]);
+  const viewportDimensions = useViewportDimensions(view3d, async () => {
+    view3d.capture((dataUrl: string) => setImage(dataUrl));
+  });
+  const [dimensionsInput, setDimensionsInput] = useState<[number, number]>(viewportDimensions);
   const [aspectRatio, setAspectRatio] = useState<number | null>(1);
   const exportDimensions = useMemo(
     () => getExportDimensions(dimensionsInput, recordingMode === RecordingMode.VIDEO_MP4),
     [dimensionsInput, recordingMode]
   );
+  const [percentCrop, setPercentCrop] = useCrop(
+    viewportDimensions,
+    exportDimensions,
+    setDimensionsInput,
+    aspectRatio,
+    isRecording
+  );
+
+  const sizeWarningText = useMemo(() => {
+    const { canvasDimensionsPx } = getCanvasDimensions(exportDimensions, percentCrop);
+    if (exportDimensions[0] > MAX_IMAGE_RESOLUTION || exportDimensions[1] > MAX_IMAGE_RESOLUTION) {
+      return "The frame size is too large (max 8192)";
+    } else if (canvasDimensionsPx[0] > MAX_IMAGE_RESOLUTION || canvasDimensionsPx[1] > MAX_IMAGE_RESOLUTION) {
+      return "The crop is too small for the selected resolution.";
+    }
+    return undefined;
+  }, [exportDimensions, percentCrop]);
 
   //// Image prefix
   const defaultImagePrefix = useMemo(() => {
@@ -222,11 +258,14 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
         max = clamp(customMax - 1, min, totalFrames - 1);
     }
 
-    setCanvasResolution(exportDimensions);
+    const { canvasDimensionsPx, canvasOffsetPx } = getCanvasDimensions(exportDimensions, percentCrop);
+    setCanvasResolution(canvasDimensionsPx);
 
     const setFrame = async (frame: number): Promise<void> => {
       await view3d.setTime(volume, frame);
       view3d.redraw(true);
+      // Update cropping preview with frame
+      view3d.capture((dataUrl) => setImage(dataUrl));
     };
     const getCanvas = (): HTMLCanvasElement => view3d.getCanvasDOMElement();
 
@@ -235,8 +274,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
       source: {
         setFrame,
         getCanvas,
-        // TODO: Update when users are able to define a crop region.
-        offsetPx: [0, 0],
+        offsetPx: canvasOffsetPx,
         dimensionsPx: exportDimensions,
       },
     });
@@ -374,6 +412,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
         onCancel={handleCancel}
         footer={modalFooter}
         getContainer={() => modalContainerRef.current ?? document.body}
+        style={{ width: "fit-content" }}
+        width={1000}
       >
         <div className={styles.exportModalContent} ref={exportModalRef}>
           <div className={styles.exportModalSettingsContainer}>
@@ -430,6 +470,12 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
               exportDimensions={exportDimensions}
               aspectRatio={aspectRatio}
               setAspectRatio={setAspectRatio}
+              onClickSetToViewport={() => {
+                setPercentCrop(getDefaultFullCrop());
+                setDimensionsInput(viewportDimensions);
+              }}
+              percentCrop={percentCrop}
+              sizeWarningText={sizeWarningText}
             />
 
             <SettingsContainer indentPx={RECORDING_SETTINGS_INDENT_PX} gapPx={6}>
@@ -491,6 +537,18 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
               </SettingsItem>
             </SettingsContainer>
             <br />
+          </div>
+          <div className={styles.cropWindowContainer}>
+            <RecordingCropPreview
+              cropDimensionsPx={exportDimensions}
+              width={"calc(min(500px, 30vw))"}
+              height={"calc(min(500px, 30vw))"}
+              image={image}
+              isRecording={isRecording}
+              percentCrop={percentCrop}
+              setPercentCrop={setPercentCrop}
+              aspectRatio={aspectRatio}
+            />
           </div>
         </div>
       </Modal>

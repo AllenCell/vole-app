@@ -15,7 +15,14 @@ export default class ImageSequenceRecorder extends CanvasRecorder {
       dataUrl = canv.toDataURL("image/png");
     } else {
       // OffscreenCanvas
-      dataUrl = await canv.convertToBlob().then((blob) => URL.createObjectURL(blob));
+      try {
+        dataUrl = await canv.convertToBlob().then((blob) => URL.createObjectURL(blob));
+      } catch (error) {
+        console.error(error);
+        throw new Error(
+          "Image capture failed; the resolution may be too high to render. See console for more details."
+        );
+      }
     }
 
     const frameSuffix: string = frame.toString().padStart(minDigits, "0");

@@ -7,7 +7,7 @@
   & div:global(.ant-modal-container) {
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: 80vh;
+    max-height: calc(100vh - 150px);
   }
 }
 
@@ -99,5 +99,26 @@
   /* Add some padding around text so it isn't clipped */
   & :global(.ant-input-number-group-addon) {
     padding: 0 6px;
+  }
+}
+
+.cropWindowContainer {
+  --image-width: calc(min(500px, 30vw));
+  --image-height: calc(min(500px, 30vw));
+  margin-top: 57px;
+  width: var(--image-width);
+  height: var(--image-height);
+  /* background-color: black; */
+  background-color: var(--color-controlpanel-bg);
+  align-content: center;
+  border: 1px solid var(--color-layout-dividers);
+  border-radius: 5px;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  & img.cropImage {
+    max-width: var(--image-width);
+    max-height: var(--image-height);
+    object-fit: contain;
   }
 }

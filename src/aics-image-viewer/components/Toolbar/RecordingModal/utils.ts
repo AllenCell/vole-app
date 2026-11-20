@@ -1,5 +1,8 @@
 import type { View3d } from "@aics/vole-core";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Crop } from "react-image-crop";
+
+import { clamp } from "../../../shared/utils/math";
 
 export function getFrameCount(min: number, max: number, frameIncrement: number): number {
   return Math.max(Math.ceil(((max ?? 1) - min + 1) / frameIncrement), 1);
@@ -73,9 +76,213 @@ export function getExportDimensions(dimensionsInput: [number, number], enforceEv
   return targetViewportDims;
 }
 
-/** Hook for tracking the current viewport dimensions.
+/**
+ * Determines the required pixel dimensions of the viewport canvas so that the
+ * cropped region has the target export resolution. Also returns the offset, in
+ * pixels, of the cropped region within the canvas.
+ */
+export function getCanvasDimensions(
+  exportDimensions: [number, number],
+  percentCrop: Crop
+): {
+  canvasDimensionsPx: [number, number];
+  canvasOffsetPx: [number, number];
+} {
+  const canvasWidthPx = Math.ceil(exportDimensions[0] / (percentCrop.width / 100));
+  const canvasHeightPx = Math.ceil(exportDimensions[1] / (percentCrop.height / 100));
+  const offsetX = Math.round((percentCrop.x / 100) * canvasWidthPx);
+  const offsetY = Math.round((percentCrop.y / 100) * canvasHeightPx);
+
+  return {
+    canvasDimensionsPx: [canvasWidthPx, canvasHeightPx],
+    canvasOffsetPx: [offsetX, offsetY],
+  };
+}
+
+/**
+ * Updates a crop when the viewport or crop dimensions (aspect ratio) changes.
+ * @returns A percentile crop, adjusted to fit within the new viewport and crop
+ * dimensions. If the viewport and crop dimensions have not changed, returns the
+ * original percentile crop.
+ */
+function syncCropToDimensions(
+  percentCrop: Crop,
+  newViewportDimensionsPx: [number, number],
+  prevViewportDimensionsPx: [number, number],
+  newCropDimsPx: [number, number],
+  prevCropDimsPx: [number, number]
+): Crop {
+  const cropDimsChanged = prevCropDimsPx[0] !== newCropDimsPx[0] || prevCropDimsPx[1] !== newCropDimsPx[1];
+  const viewportDimsChanged =
+    prevViewportDimensionsPx[0] !== newViewportDimensionsPx[0] ||
+    prevViewportDimensionsPx[1] !== newViewportDimensionsPx[1];
+
+  if (!cropDimsChanged && !viewportDimsChanged) {
+    return percentCrop;
+  }
+
+  const centerPctX = percentCrop.x + percentCrop.width / 2;
+  const centerPctY = percentCrop.y + percentCrop.height / 2;
+  let newHeightPct = percentCrop.height;
+  let newWidthPct = percentCrop.width;
+  const prevCropAspectRatioPx = prevCropDimsPx[0] / prevCropDimsPx[1];
+  const newCropAspectRatioPx = newCropDimsPx[0] / newCropDimsPx[1];
+  const newViewportAspectRatio = newViewportDimensionsPx[0] / newViewportDimensionsPx[1];
+
+  if (prevCropAspectRatioPx > newCropAspectRatioPx) {
+    // Old crop was wider than the new crop; use width as bound, and adjust height
+    newHeightPct = (newWidthPct / newCropAspectRatioPx) * newViewportAspectRatio;
+  } else {
+    // Old crop was taller than the new crop; use height as bound, and adjust width
+    newWidthPct = (newHeightPct * newCropAspectRatioPx) / newViewportAspectRatio;
+  }
+
+  // Normalize width and height to be within the new viewport bounds
+  if (newWidthPct > 100) {
+    newWidthPct = 100;
+    newHeightPct = (newWidthPct / newCropAspectRatioPx) * newViewportAspectRatio;
+  }
+  if (newHeightPct > 100) {
+    newHeightPct = 100;
+    newWidthPct = (newHeightPct * newCropAspectRatioPx) / newViewportAspectRatio;
+  }
+
+  const newPercentCrop: Crop = {
+    unit: "%",
+    x: centerPctX - newWidthPct / 2,
+    y: centerPctY - newHeightPct / 2,
+    width: newWidthPct,
+    height: newHeightPct,
+  };
+  // Recenter if the new crop goes out of the viewport bounds
+  newPercentCrop.x = clamp(newPercentCrop.x, 0, 100 - newPercentCrop.width);
+  newPercentCrop.y = clamp(newPercentCrop.y, 0, 100 - newPercentCrop.height);
+
+  return newPercentCrop;
+}
+
+export const getDefaultFullCrop = (): Crop => {
+  return {
+    unit: "%",
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+  };
+};
+
+const getDefaultCropFromDimensions = (cropDimensions: [number, number], viewportDimensions: [number, number]): Crop => {
+  const aspectRatio = cropDimensions[0] / cropDimensions[1];
+  const viewportAspectRatio = viewportDimensions[0] / viewportDimensions[1];
+  const isAspectRatioWider = viewportAspectRatio > aspectRatio;
+  const width = isAspectRatioWider ? (aspectRatio / viewportAspectRatio) * 100 : 100;
+  const height = isAspectRatioWider ? 100 : (viewportAspectRatio / aspectRatio) * 100;
+  return {
+    unit: "%",
+    x: (100 - width) / 2,
+    y: (100 - height) / 2,
+    width: width,
+    height: height,
+  };
+};
+
+//// MARK: Hooks
+
+/**
+ * Hook for managing a percentage {@linkcode Crop} region within a resizable
+ * viewport. Synchronizes changes to the crop region with the target image size,
+ * and updates crop bound and aspect ratio relative to the viewport.
+ *
+ * @param viewportDimensionsPx The dimensions of the viewport in pixels.
+ * @param targetDimensionsPx The target dimensions of the output image in
+ * pixels.
+ * @param setTargetDimensionsPx Callback to update the target dimensions of the
+ * output image in pixels. Called if the crop region's size changes when
+ * `aspectRatio` is `null`.
+ * @param aspectRatio The desired aspect ratio of the target output image, or
+ * null if freeform. When freeform, changes to the crop region's size will also
+ * be used to update the target dimensions, via calls to `setTargetDimensionsPx`.
+ * @returns a tuple containing:
+ *   - The current crop region as a percent {@linkcode Crop} object.
+ *   - A setter function to update the crop region, which accepts a percent
+ *     {@linkcode Crop} object.
+ */
+export function useCrop(
+  viewportDimensionsPx: [number, number],
+  targetDimensionsPx: [number, number],
+  setTargetDimensionsPx: (dimensions: [number, number]) => void,
+  aspectRatio: number | null,
+  isRecording: boolean
+): [Crop, (percentCrop: Crop) => void] {
+  const [percentCrop, _setPercentCrop] = useState<Crop>(
+    getDefaultCropFromDimensions(targetDimensionsPx, viewportDimensionsPx)
+  );
+  const prevCropDimensionsRef = useRef(targetDimensionsPx);
+  const prevViewportDimensionsRef = useRef(viewportDimensionsPx);
+
+  // Wrap the percent crop setter to 1) allow changes to the crop aspect ratio
+  // to update the crop dimensions, and 2) prevent the crop from becoming too
+  // small.
+  const setPercentCrop = useCallback(
+    (newPercentCrop: Crop) => {
+      newPercentCrop = { ...newPercentCrop };
+
+      // Require that crops be at least 10% of the width of the overall image
+      // (or whatever the aspect ratio dictates when set).
+      const viewportAspectRatio = viewportDimensionsPx[0] / viewportDimensionsPx[1];
+      const minWidthPct = aspectRatio !== null ? Math.min(10, (100 * aspectRatio) / viewportAspectRatio) : 10;
+      newPercentCrop.width = Math.max(minWidthPct, newPercentCrop.width);
+      const minHeight = aspectRatio !== null ? (newPercentCrop.width / aspectRatio) * viewportAspectRatio : 10;
+      newPercentCrop.height = Math.max(minHeight, newPercentCrop.height);
+
+      // Bound crop to viewport area
+      newPercentCrop.x = clamp(newPercentCrop.x, 0, 100 - newPercentCrop.width);
+      newPercentCrop.y = clamp(newPercentCrop.y, 0, 100 - newPercentCrop.height);
+
+      if (aspectRatio !== null) {
+        _setPercentCrop(newPercentCrop);
+        return;
+      }
+      // When aspect ratio is disabled, scale the crop dimensions to match.
+      const newCropDimensionsPx: [number, number] = [
+        Math.round((targetDimensionsPx[0] / percentCrop.width) * newPercentCrop.width),
+        Math.round((targetDimensionsPx[1] / percentCrop.height) * newPercentCrop.height),
+      ];
+      setTargetDimensionsPx(newCropDimensionsPx);
+      _setPercentCrop(newPercentCrop);
+      prevCropDimensionsRef.current = newCropDimensionsPx;
+    },
+    [targetDimensionsPx, aspectRatio, percentCrop, viewportDimensionsPx, setTargetDimensionsPx]
+  );
+
+  // Update the crop when the viewport dimensions or crop dimensions change.
+  useEffect(() => {
+    if (isRecording) {
+      return;
+    }
+    const newPercentCrop = syncCropToDimensions(
+      percentCrop,
+      viewportDimensionsPx,
+      prevViewportDimensionsRef.current,
+      targetDimensionsPx,
+      prevCropDimensionsRef.current
+    );
+    prevCropDimensionsRef.current = targetDimensionsPx;
+    prevViewportDimensionsRef.current = viewportDimensionsPx;
+    if (newPercentCrop === percentCrop) {
+      return;
+    }
+    _setPercentCrop(newPercentCrop);
+  }, [targetDimensionsPx, viewportDimensionsPx, percentCrop, isRecording]);
+
+  return [percentCrop, setPercentCrop];
+}
+
+/**
+ * Hook for tracking the current viewport dimensions.
  * @param view3d The 3D view instance.
- * @param onUpdateDimensions Optional callback invoked when the viewport dimensions change.
+ * @param onUpdateDimensions Optional callback invoked when the viewport
+ * dimensions change.
  * @returns The current viewport dimensions as a tuple [width, height].
  */
 export function useViewportDimensions(

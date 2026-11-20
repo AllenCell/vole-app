@@ -1,7 +1,8 @@
 import type { View3d } from "@aics/vole-core";
-import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
+import { LockOutlined, UnlockOutlined, WarningOutlined } from "@ant-design/icons";
 import { Button, Card, InputNumber, Space, Tooltip } from "antd";
-import React, { type ReactElement, useCallback, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import type { Crop } from "react-image-crop";
 
 import { FlexColumn, FlexRow, FlexRowAlignCenter, VisuallyHidden } from "../../shared/utils";
 import { useViewportDimensions } from "./utils";
@@ -20,6 +21,8 @@ type RecordingDimensionControlsProps = {
   dimensions: [number, number];
   setDimensions: (dimensions: [number, number]) => void;
   exportDimensions: [number, number];
+  sizeWarningText: string | undefined;
+  percentCrop: Crop;
 
   onClickSetToViewport?: () => void;
 };
@@ -41,6 +44,8 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     aspectRatio,
     setAspectRatio,
     onClickSetToViewport,
+    sizeWarningText,
+    percentCrop,
   } = props;
 
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -49,6 +54,23 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
 
   const [widthInput, setWidthInput] = useState(dimensions[0]);
   const [heightInput, setHeightInput] = useState(dimensions[1]);
+
+  //// MARK: Listeners
+
+  // Sync prop dimensions to input dimensions on change
+  useEffect(() => {
+    setWidthInput(dimensions[0]);
+    setHeightInput(dimensions[1]);
+  }, [dimensions]);
+
+  // Clear useCurrentViewportSize when the crop is modified
+  useEffect(() => {
+    if (Math.abs(percentCrop.width - 100) > 0.0001 || Math.abs(percentCrop.height - 100) > 0.0001) {
+      setUseCurrentViewportSize(false);
+    }
+  }, [percentCrop]);
+
+  //// MARK: Callbacks
 
   // Sync width and height inputs with the current dimensions
   const setDimensions = useCallback(
@@ -78,7 +100,7 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
     setAspectRatio(viewportDimensions[0] / viewportDimensions[1]);
     setUseCurrentViewportSize(true);
     onClickSetToViewport?.();
-  }, [viewportDimensions, aspectRatio, setAspectRatio, setDimensions, onClickSetToViewport]);
+  }, [viewportDimensions, setAspectRatio, setDimensions, onClickSetToViewport]);
 
   const handleSetWidth = (): void => {
     let width = widthInput;
@@ -207,11 +229,17 @@ export default function RecordingDimensionControls(props: RecordingDimensionCont
             </FlexColumn>
           </FlexColumn>
         </SettingsItem>
-        <SettingsItem label="Exported file dimensions" isDisplayOnly={true}>
-          <p
-            className={styles.hintText}
-            id={RecordingDimensionControlsHtmlIds.FINAL_DIMENSIONS_TEXT}
-          >{`${exportDimensions[0]} × ${exportDimensions[1]}`}</p>
+        <SettingsItem label="Exported file dimensions" isDisplayOnly={true} labelStyle={{ marginBottom: "auto" }}>
+          <p className={styles.hintText} id={RecordingDimensionControlsHtmlIds.FINAL_DIMENSIONS_TEXT}>
+            {`${exportDimensions[0]} × ${exportDimensions[1]} `}
+          </p>
+          <p style={{ color: "var(--color-alert-warning-text)", textAlign: "left", minHeight: "22px" }}>
+            {sizeWarningText && (
+              <>
+                <WarningOutlined /> {sizeWarningText}
+              </>
+            )}
+          </p>
         </SettingsItem>
       </SettingsContainer>
     </Card>

@@ -43,7 +43,6 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
         onChange={handleOnChange}
         onDragStart={() => setIsDragging(true)}
         onDragEnd={() => setIsDragging(false)}
-        // onComplete={handleOnChange}
         aspect={aspectRatio ?? undefined}
         style={{ objectFit: "contain" }}
         keepSelection={true}

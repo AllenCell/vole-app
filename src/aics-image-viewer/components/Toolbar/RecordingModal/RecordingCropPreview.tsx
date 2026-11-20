@@ -1,4 +1,4 @@
-import React, { type ReactElement, useState } from "react";
+import React, { type ReactElement, useEffect, useState } from "react";
 import ReactCrop, { type Crop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 
@@ -22,6 +22,12 @@ export default function RecordingCropPreview(props: RecordingCropPreviewProps): 
   const [isDragging, setIsDragging] = useState(false);
   const [currentCrop, setCurrentCrop] = useState(props.percentCrop);
   const crop = isDragging ? currentCrop : props.percentCrop;
+
+  useEffect(() => {
+    if (!isDragging) {
+      setCurrentCrop(props.percentCrop);
+    }
+  }, [isDragging, props.percentCrop]);
 
   //// MARK: Callbacks
 

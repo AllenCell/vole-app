@@ -472,6 +472,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
               setAspectRatio={setAspectRatio}
               onClickSetToViewport={() => {
                 setPercentCrop(getDefaultFullCrop());
+                setDimensionsInput(viewportDimensions);
               }}
               percentCrop={percentCrop}
               sizeWarningText={sizeWarningText}

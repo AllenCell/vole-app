@@ -46,6 +46,8 @@ const ShareModal: React.FC<ShareModalProps> = (props: ShareModalProps) => {
   );
   const hasStoredMetadata = useMemo(() => readStoredMetadata(urls).some((meta) => meta !== undefined), [urls]);
 
+  // TODO this should ideally be an API to extract state from the viewer, so that `website` doesn't have to file-import
+  //   `app` code and doesn't have to explicitly depend on `zustand`.
   const viewerSettings = useViewerState(useShallow(selectViewerSettings));
   const channelSettings = useViewerState(useShallow((store: ViewerStore) => store.channelSettings));
 

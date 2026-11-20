@@ -8,6 +8,7 @@ import {
   CLIPPING_PANEL_HEIGHT_TALL,
 } from "../../shared/constants";
 import type { AxisName, Styles, XYZ } from "../../shared/types";
+import { colorArrayToString } from "../../shared/utils/colorRepresentations";
 import type PlayControls from "../../shared/utils/playControls";
 import { select, useViewerState } from "../../state/store";
 import { ViewMode } from "../../state/types";
@@ -67,6 +68,7 @@ const ViewerWrapper: React.FC<ViewerWrapperProps> = (props) => {
   const { appHeight, visibleControls, numTimesteps, numScenes } = props;
 
   const changeViewerSetting = useViewerState(select("changeViewerSetting"));
+  const backgroundColor = useViewerState(select("backgroundColor"));
   const viewMode = useViewerState(select("viewMode"));
   const region = useViewerState(select("region"));
   const slice = useViewerState(select("slice"));
@@ -125,7 +127,10 @@ const ViewerWrapper: React.FC<ViewerWrapperProps> = (props) => {
   }
 
   return (
-    <div className="cell-canvas" style={{ ...STYLES.viewer, height: appHeight }}>
+    <div
+      className="cell-canvas"
+      style={{ ...STYLES.viewer, height: appHeight, backgroundColor: colorArrayToString(backgroundColor) }}
+    >
       <div
         ref={view3dviewerRef}
         style={{

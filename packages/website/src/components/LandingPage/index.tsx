@@ -1,7 +1,6 @@
 import { Button, Divider } from "antd";
 import React, { type ReactElement, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
 
 import { parseViewerUrlParams } from "../../../../app/src";

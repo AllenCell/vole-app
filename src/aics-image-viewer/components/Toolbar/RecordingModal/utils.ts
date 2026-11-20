@@ -228,8 +228,9 @@ export function useCrop(
       newPercentCrop = { ...newPercentCrop };
 
       // Require that crops be at least 10% of the width of the overall image
-      newPercentCrop.width = Math.max(10, newPercentCrop.width);
       const viewportAspectRatio = viewportDimensionsPx[0] / viewportDimensionsPx[1];
+      const minWidthPct = aspectRatio !== null ? Math.min(10, (100 * aspectRatio) / viewportAspectRatio) : 10;
+      newPercentCrop.width = Math.max(minWidthPct, newPercentCrop.width);
       const minHeight = aspectRatio !== null ? (newPercentCrop.width / aspectRatio) * viewportAspectRatio : 10;
       newPercentCrop.height = Math.max(minHeight, newPercentCrop.height);
 

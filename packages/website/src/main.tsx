@@ -1,0 +1,65 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { createBrowserRouter, type RouteObject, RouterProvider } from "react-router-dom";
+
+import { VOLEAPP_BASENAME, VOLEAPP_BUILD_ENVIRONMENT, VOLEAPP_VERSION, VOLECORE_VERSION } from "./constants";
+import { decodeGitHubPagesUrl, isEncodedPathUrl, resolveBasename, tryRemoveHashRouting } from "./utils/gh_route_utils";
+
+import StyleProvider from "../../app/src/components/StyleProvider";
+import ErrorPage from "./components/ErrorPage";
+
+import "./App.css";
+
+console.log(`vole-app ${VOLEAPP_BUILD_ENVIRONMENT} build`);
+console.log(`vole-app Version ${VOLEAPP_VERSION}`);
+
+const basename = resolveBasename(VOLEAPP_BASENAME);
+console.log(
+  `vole-app Basename ${VOLEAPP_BASENAME}` + (VOLEAPP_BASENAME !== basename ? ` (resolved to "${basename}")` : "")
+);
+
+console.log(`vole-core Version ${VOLECORE_VERSION}`);
+
+// Decode URL path if it was encoded for GitHub pages or uses hash routing.
+const locationUrl = new URL(window.location.toString());
+if (locationUrl.hash !== "" || isEncodedPathUrl(locationUrl)) {
+  const decodedUrl = tryRemoveHashRouting(decodeGitHubPagesUrl(locationUrl));
+  const newRelativePath = decodedUrl.pathname + decodedUrl.search + decodedUrl.hash;
+  console.log("Redirecting to " + newRelativePath);
+  // Replaces the query string path with the original path now that the
+  // single-page app has loaded. This lets routing work as normal below.
+  window.history.replaceState(null, "", newRelativePath);
+}
+
+// TODO these components are now lazy loaded. Should they get `Suspense`s around them? What should we fall back to?
+const routes: RouteObject[] = [
+  {
+    path: "/",
+    lazy: async () => {
+      const LandingPage = (await import("./components/LandingPage")).default;
+      return {
+        Component: () => <LandingPage />,
+      };
+    },
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "viewer",
+    lazy: async () => {
+      const AppWrapper = (await import("./components/AppWrapper")).default;
+      return {
+        Component: () => <AppWrapper />,
+      };
+    },
+    errorElement: <ErrorPage />,
+  },
+];
+
+const router = createBrowserRouter(routes, { basename: basename });
+
+const root = createRoot(document.getElementById("cell-viewer")!);
+root.render(
+  <StyleProvider>
+    <RouterProvider router={router} />
+  </StyleProvider>
+);

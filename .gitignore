@@ -11,7 +11,9 @@ environment.txt
 # Built files
 es/
 imageviewer/
-type-declarations/
+/types/
+packages/*/types/
+*.tsbuildinfo
 
 # Local environment configuration
 .env*.local

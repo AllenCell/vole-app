@@ -522,7 +522,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
                     value={imagePrefix}
                     disabled={isRecording}
                   />
-                  <p>{recordingMode === RecordingMode.IMAGE_SEQUENCE ? "#.png" : ".mp4"}</p>
+                  <p>{recordingMode === RecordingMode.VIDEO_MP4 ? ".mp4" : "#.png"}</p>
                   <Button
                     disabled={isRecording || useDefaultImagePrefix}
                     onClick={() => {

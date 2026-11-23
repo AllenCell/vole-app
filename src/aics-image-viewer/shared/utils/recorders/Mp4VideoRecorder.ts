@@ -37,7 +37,7 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
     const codec = await getFirstEncodableVideoCodec(["avc", "av1", "vp9"], {
       width: this.getCanvas().width,
       height: this.getCanvas().height,
-      quality: new Quality({ bitrate: this.options.bitrate }),
+      quality: new Quality(this.options.quality),
     });
     if (!codec) {
       throw new Error("No encodable video codec found.");
@@ -45,7 +45,7 @@ export default class Mp4VideoRecorder extends CanvasRecorder {
 
     this.videoSource = new CanvasSource(this.getCanvas(), {
       codec: codec,
-      quality: new Quality({ bitrate: this.options.bitrate }),
+      quality: new Quality(this.options.quality),
       // Video compression works by recording changes from one frame to the next. Keyframes
       // have the full frame data saved, so adding them in ensures a smaller drop in frame
       // quality. See https://en.wikipedia.org/wiki/Key_frame for more details.

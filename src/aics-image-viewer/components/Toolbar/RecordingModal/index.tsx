@@ -7,7 +7,7 @@ import { clamp } from "../../../shared/utils/math";
 import type PlayControls from "../../../shared/utils/playControls";
 import { select, useViewerState } from "../../../state/store";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../shared/utils";
-import { RangeMode, RecordingMode } from "./types";
+import { RangeMode, RecordingMode, VideoQuality, VideoQualityToEstimatedBitrate } from "./types";
 import {
   getApproximateVideoFilesizeMb,
   getCanvasDimensions,
@@ -50,12 +50,6 @@ type RecordingModalProps = {
   setIsOpen: (open: boolean) => void;
   setCanvasResolution(resolution: [number, number] | null): void;
 };
-
-export enum VideoBitrate {
-  HIGH = 1e8, // 100 Mbps
-  MEDIUM = 1e7, // 10 Mbps
-  LOW = 5e6, // 5 Mbps
-}
 
 const RECORDING_CARD_SETTINGS_INDENT_PX = 5;
 const RECORDING_SETTINGS_INDENT_PX = 18;
@@ -166,7 +160,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
 
   //// Video settings
   const [fps, setFps] = useState(12);
-  const [videoBitsPerSecond, setVideoBitsPerSecond] = useState(VideoBitrate.MEDIUM);
+  const [videoQuality, setVideoQuality] = useState(VideoQuality.MEDIUM);
+  const videoBitsPerSecond = VideoQualityToEstimatedBitrate[videoQuality];
 
   //////////////////////////////////////////////////////////
   //// MARK: State Handlers
@@ -277,7 +272,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
       frameIncrement: rangeMode === RangeMode.CUSTOM ? frameIncrement : 1,
       fps: fps,
       minDigits: (totalFrames - 1).toString().length,
-      bitrate: videoBitsPerSecond,
+      quality: videoQuality,
       prefix: imagePrefix,
       onCompleted: async () => {
         setPercentComplete(100);
@@ -345,9 +340,9 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   //////////////////////////////////////////////////////////
 
   const videoQualityOptions = [
-    { label: "High", value: VideoBitrate.HIGH },
-    { label: "Med", value: VideoBitrate.MEDIUM },
-    { label: "Low", value: VideoBitrate.LOW },
+    { label: "High", value: VideoQuality.HIGH },
+    { label: "Med", value: VideoQuality.MEDIUM },
+    { label: "Low", value: VideoQuality.LOW },
   ];
 
   const isWebCodecsEnabled = Mp4VideoRecorder.isSupported();
@@ -502,8 +497,8 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
                         disabled={isRecording}
                         options={videoQualityOptions}
                         optionType="button"
-                        value={videoBitsPerSecond}
-                        onChange={(e) => setVideoBitsPerSecond(e.target.value)}
+                        value={videoQuality}
+                        onChange={(e) => setVideoQuality(e.target.value)}
                       />
                       <p className={styles.hintText}>(~{approximateFilesizeMb})</p>
                     </FlexRowAlignCenter>

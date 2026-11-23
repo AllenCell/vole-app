@@ -1,13 +1,13 @@
 import type { View3d, Volume } from "@aics/vole-core";
 import { Button, Input, InputNumber, Modal, Radio, Tooltip } from "antd";
-import React, { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { TOOLTIP_TRIGGER } from "../../../shared/constants";
 import { clamp } from "../../../shared/utils/math";
 import type PlayControls from "../../../shared/utils/playControls";
 import { select, useViewerState } from "../../../state/store";
 import { FlexColumnAlignCenter, FlexRowAlignCenter } from "../../shared/utils";
-import { RangeMode, RecordingMode, VideoQuality, VideoQualityToEstimatedBitrate } from "./types";
+import { RangeMode, RecordingMode, VideoQuality } from "./types";
 import {
   getApproximateVideoFilesizeMb,
   getCanvasDimensions,
@@ -161,7 +161,6 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   //// Video settings
   const [fps, setFps] = useState(12);
   const [videoQuality, setVideoQuality] = useState(VideoQuality.MEDIUM);
-  const videoBitsPerSecond = VideoQualityToEstimatedBitrate[videoQuality];
 
   //////////////////////////////////////////////////////////
   //// MARK: State Handlers
@@ -350,12 +349,7 @@ export default function RecordingModal(props: RecordingModalProps): ReactElement
   const numFrames = rangeMode === RangeMode.CUSTOM ? customRangeFrames : totalFrames;
   const totalSeconds = numFrames / fps;
 
-  const approximateFilesizeMb = getApproximateVideoFilesizeMb(
-    totalSeconds,
-    videoBitsPerSecond,
-    exportDimensions,
-    numFrames
-  );
+  const approximateFilesizeMb = getApproximateVideoFilesizeMb(totalSeconds, videoQuality, exportDimensions, numFrames);
 
   // Footer for the Export modal.
   // Layout: Optional Progress meter - Export/Stop Button - Cancel Button

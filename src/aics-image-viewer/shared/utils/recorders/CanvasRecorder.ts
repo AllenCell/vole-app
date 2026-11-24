@@ -1,3 +1,5 @@
+import { VideoQuality } from "../../../components/Toolbar/RecordingModal/types";
+
 export type RecordingOptions = {
   /** Frame to start recording from, inclusive. 0 by default. */
   min: number;
@@ -27,7 +29,8 @@ export type RecordingOptions = {
   /** Frames per second for video output. Default is 30 fps.*/
   fps: number;
   /** Average video bitrate in bits/second. */
-  bitrate: number;
+  // bitrate: number;
+  quality: VideoQuality;
   /** Width, height of output video or image. */
   outputSize: [number, number];
   /** Called when the recording has completed successfully. (Will not be called if the recording
@@ -48,7 +51,7 @@ export const defaultRecordingOptions: RecordingOptions = {
   prefix: "image-",
   delayMs: 100,
   fps: 30,
-  bitrate: 10e6,
+  quality: VideoQuality.MEDIUM,
   outputSize: [730, 500],
   onCompleted: async function (): Promise<void> {},
   onRecordedFrame: function (_frame: number): void {},

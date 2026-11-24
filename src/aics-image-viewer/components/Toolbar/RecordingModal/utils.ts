@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Crop } from "react-image-crop";
 
 import { clamp } from "../../../shared/utils/math";
+import { VideoQuality } from "./types";
 
 export function getFrameCount(min: number, max: number, frameIncrement: number): number {
   return Math.max(Math.ceil(((max ?? 1) - min + 1) / frameIncrement), 1);
@@ -30,10 +31,16 @@ export const getDurationLabel = (totalSeconds: number): string => {
   return timestamp;
 };
 
+const VideoQualityToEstimatedBitrate: Record<VideoQuality, number> = {
+  [VideoQuality.HIGH]: 1e8,
+  [VideoQuality.MEDIUM]: 2e7,
+  [VideoQuality.LOW]: 1e7,
+};
+
 /** Returns a (heavily-approximated) file size in megabytes (MB) for a video. */
 export const getApproximateVideoFilesizeMb = (
   totalSeconds: number,
-  videoBitsPerSecond: number,
+  videoQuality: VideoQuality,
   exportDimensions: [number, number],
   numFrames: number
 ): string => {
@@ -43,6 +50,7 @@ export const getApproximateVideoFilesizeMb = (
 
   // Video quality is bitrate in bits/second.
   // This is usually within 0.5-2x the actual filesize.
+  const videoBitsPerSecond = VideoQualityToEstimatedBitrate[videoQuality];
   const maxVideoBitsDuration = totalSeconds * videoBitsPerSecond;
 
   // Experimentally-determined compression ratio (bits per pixel), which determines

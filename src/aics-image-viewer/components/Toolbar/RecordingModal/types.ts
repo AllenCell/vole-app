@@ -8,3 +8,9 @@ export const enum RecordingMode {
   IMAGE_SEQUENCE,
   VIDEO_MP4,
 }
+
+export const enum VideoQuality {
+  HIGH = "very-high",
+  MEDIUM = "medium",
+  LOW = "low",
+}

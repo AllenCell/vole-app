@@ -1,6 +1,6 @@
 import type { View3d, Volume } from "@aics/vole-core";
 import { Button, Input, InputNumber, Modal, Radio, Tooltip } from "antd";
-import { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { TOOLTIP_TRIGGER } from "../../../shared/constants";
 import { clamp } from "../../../shared/utils/math";
